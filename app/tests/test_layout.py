@@ -223,3 +223,73 @@ def test_favicon_purple_contrast():
     from PIL import Image
     im=Image.open(SOURCE/'assets'/'mochi.png').convert('RGBA')
     assert im.getpixel((130,300))[:3] == (150,127,234)
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='POSIX post-install launcher')
+def test_real_postinstall_linux_shortcut_and_log(work, monkeypatch):
+    """Use the actual generated private launcher, after cleanup, from a complex path."""
+    import configparser
+    import shlex
+    monkeypatch.setattr(install_layout.sys, 'platform', 'linux')
+    install_layout.prepare()
+    install_layout.finish()
+    state = work / '.mochi'
+    assert not (work / 'app').exists()
+    python = state / 'venv' / 'bin' / 'python'
+    python.parent.mkdir(parents=True)
+    python.write_text(
+        '#!/bin/sh\n'
+        'if [ "$1" = "-c" ]; then exit 0; fi\n'
+        'printf "%s\\n" "$1" >> "$MOCHI_TEST_MARKER"\n',
+        encoding='utf-8')
+    python.chmod(0o755)
+    deno = state / 'deno' / 'bin' / 'deno'
+    deno.parent.mkdir(parents=True)
+    deno.write_text('#!/bin/sh\nexit 0\n', encoding='utf-8')
+    deno.chmod(0o755)
+    marker = work / 'opened'
+    env = os.environ.copy()
+    env['MOCHI_TEST_MARKER'] = str(marker)
+    desktop = work / 'Run Mochi Now.desktop'
+    config = configparser.ConfigParser(interpolation=None)
+    config.read(desktop, encoding='utf-8')
+    command = shlex.split(config['Desktop Entry']['Exec'])
+    assert command == ['/bin/sh', str(state / 'run.sh')]
+    assert config['Desktop Entry']['Terminal'] == 'false'
+    result = subprocess.run(command, cwd=work, env=env,
+                            capture_output=True, text=True, timeout=15)
+    assert result.returncode == 0, result.stderr
+    assert marker.read_text(encoding='utf-8').strip() == str(state / 'app' / 'launcher.py')
+    assert (state / 'launch.log').is_file()
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='POSIX shell launcher')
+def test_postinstall_launcher_reports_errors_and_logs(work, monkeypatch):
+    monkeypatch.setattr(install_layout.sys, 'platform', 'linux')
+    install_layout.prepare()
+    install_layout.finish()
+    state = work / '.mochi'
+    python = state / 'venv' / 'bin' / 'python'
+    python.parent.mkdir(parents=True)
+    python.write_text('#!/bin/sh\nexit 7\n', encoding='utf-8')
+    python.chmod(0o755)
+    deno = state / 'deno' / 'bin' / 'deno'
+    deno.parent.mkdir(parents=True)
+    deno.write_text('#!/bin/sh\nexit 0\n', encoding='utf-8')
+    deno.chmod(0o755)
+    result = subprocess.run(['/bin/sh', str(state / 'run.sh')],
+                            cwd=work, capture_output=True, text=True, timeout=15)
+    assert result.returncode == 7
+    assert (state / 'launch.log').exists()
+
+
+def test_incomplete_upgrade_cannot_replace_previous_app(work):
+    state = work / '.mochi'
+    previous = state / 'app'
+    previous.mkdir(parents=True)
+    (previous / 'good.txt').write_text('working code', encoding='utf-8')
+    (work / 'app' / 'assets' / 'hero-bunny.png').unlink()
+    with pytest.raises(RuntimeError, match='incomplete'):
+        install_layout.prepare()
+    assert (previous / 'good.txt').read_text(encoding='utf-8') == 'working code'
+    assert not (state / 'app.previous').exists()
