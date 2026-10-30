@@ -39,7 +39,7 @@ def valid_session():
                     asset = urllib.request.Request(base + '/assets/hero-bunny.png',
                                                    headers={'X-Mochi-Key': key})
                     with urllib.request.urlopen(asset, timeout=1.5) as reply:
-                        if reply.read(8) == b'\x89PNG\r\n\x1a\n':
+                        if reply.read().startswith(b'\x89PNG\r\n\x1a\n'):
                             return open_url
                 except (OSError, urllib.error.URLError):
                     pass
