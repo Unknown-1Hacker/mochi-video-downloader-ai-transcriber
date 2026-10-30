@@ -64,52 +64,70 @@ def ffmpeg_folder(root: Path) -> Path:
 
 
 def ensure_ffmpeg(root: Path) -> str:
-    """Prepare both ffmpeg and ffprobe beside the app, without admin access."""
+    """Use a healthy, private FFmpeg pair; bounded fallbacks, no user-data changes."""
     target_dir = ffmpeg_folder(root)
     target_dir.mkdir(parents=True, exist_ok=True)
     exe = '.exe' if os.name == 'nt' else ''
-    ffmpeg = target_dir / ('ffmpeg' + exe)
-    ffprobe = target_dir / ('ffprobe' + exe)
-    if ffmpeg.is_file() and ffprobe.is_file() and ffmpeg.stat().st_size and ffprobe.stat().st_size:
+    targets = [target_dir / ('ffmpeg' + exe), target_dir / ('ffprobe' + exe)]
+
+    def healthy(paths):
         try:
-            if all(subprocess.run([str(tool), '-version'], capture_output=True, timeout=8, check=False).returncode == 0
-                   for tool in (ffmpeg, ffprobe)):
-                return str(target_dir)
+            return all(Path(p).is_file() and Path(p).stat().st_size > 0 and
+                       subprocess.run([str(p), '-version'], stdout=subprocess.DEVNULL,
+                                      stderr=subprocess.DEVNULL, timeout=10, check=False).returncode == 0
+                       for p in paths)
         except (OSError, subprocess.TimeoutExpired):
-            pass
-        # Broken tool files are regenerated below, without touching user downloads.
-        ffmpeg.unlink(missing_ok=True)
-        ffprobe.unlink(missing_ok=True)
-    # Prefer healthy system media tools before fetching a new binary.
-    native_ffmpeg, native_probe = shutil.which('ffmpeg'), shutil.which('ffprobe')
-    sources = (native_ffmpeg, native_probe) if native_ffmpeg and native_probe else None
-    try:
-        if not sources:
-            from static_ffmpeg import run
-            sources = run.get_or_fetch_platform_executables_else_raise()
-    except Exception:
-        # Fall back to bundled imageio FFmpeg plus an already-installed ffprobe.
+            return False
+
+    if healthy(targets):
+        return str(target_dir)
+
+    # These are Mochi-owned tools only, never anything on the system PATH.
+    for target in targets:
+        target.unlink(missing_ok=True)
+
+    def install_pair(sources):
+        if not sources or len(sources) != 2:
+            return False
         try:
-            import imageio_ffmpeg
-            probe = shutil.which('ffprobe')
-            if probe:
-                sources = (imageio_ffmpeg.get_ffmpeg_exe(), probe)
-        except Exception:
+            for source, target in zip(sources, targets):
+                if Path(source).resolve() != target.resolve():
+                    shutil.copy2(source, target)
+                if os.name != 'nt':
+                    target.chmod(target.stat().st_mode | 0o111)
+            if healthy(targets):
+                return True
+        except (OSError, shutil.Error):
             pass
-    if not sources:
-        raise FriendlyError('Could not prepare FFmpeg and FFprobe. Check internet, then click Fix my tools or double-click Run Mochi Now again.')
+        for target in targets:
+            target.unlink(missing_ok=True)
+        return False
+
+    system = (shutil.which('ffmpeg'), shutil.which('ffprobe'))
+    if all(system) and install_pair(system):
+        return str(target_dir)
+
+    # A copied system executable may be a non-portable shim (notably Windows).
+    # Validate the private copy; if it fails, fetch a real binary once.
     try:
-        for source, target in zip(sources, (ffmpeg, ffprobe)):
-            if Path(source).resolve() != target.resolve():
-                shutil.copy2(source, target)
-            if os.name != 'nt':
-                target.chmod(target.stat().st_mode | 0o111)
-            result = subprocess.run([str(target), '-version'], capture_output=True, timeout=15, check=False)
-            if result.returncode != 0:
-                raise FriendlyError(f'Could not run {target.name}. Please rerun setup.')
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise FriendlyError(f'FFmpeg setup failed: {exc}') from exc
-    return str(target_dir)
+        from static_ffmpeg import run
+        if install_pair(run.get_or_fetch_platform_executables_else_raise()):
+            return str(target_dir)
+    except Exception:
+        pass
+
+    try:
+        import imageio_ffmpeg
+        fallback = (imageio_ffmpeg.get_ffmpeg_exe(), shutil.which('ffprobe'))
+        if all(fallback) and install_pair(fallback):
+            return str(target_dir)
+    except Exception:
+        pass
+
+    raise FriendlyError(
+        'Could not prepare FFmpeg and FFprobe. Check internet, then click Fix my tools '
+        'or double-click Run Mochi Now again.'
+    )
 
 
 def common_ydl(root: Path) -> dict:
