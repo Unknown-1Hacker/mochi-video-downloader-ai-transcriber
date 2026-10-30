@@ -1,4 +1,6 @@
 import json
+import os
+import sys
 import threading
 import time
 import urllib.error
@@ -154,7 +156,11 @@ def test_downloads_button_opens_folder_even_before_first_job(server, monkeypatch
     with request(base, '/api/open-downloads', token, {}) as resp:
         assert json.loads(resp.read())['ok']
     assert (root / 'My Downloads').is_dir()
-    assert calls == [['xdg-open', str((root / 'My Downloads').resolve())]]
+    if os.name == 'nt':
+        assert calls == []  # Windows uses os.startfile, not subprocess.Popen
+    else:
+        command = 'open' if sys.platform == 'darwin' else 'xdg-open'
+        assert calls == [[command, str((root / 'My Downloads').resolve())]]
 
 
 def test_downloads_button_rejects_unauthorized_calls(server):

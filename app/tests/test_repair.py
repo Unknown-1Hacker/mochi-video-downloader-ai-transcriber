@@ -53,7 +53,7 @@ def test_real_ffmpeg_recovers_exact_pyav_bug(tmp_path,monkeypatch,during_iterati
     messages=[]
     outputs=core.recognize(audio,tmp_path/'out','balanced',None,False,
                            lambda text,pct:messages.append(text),threading.Event())
-    assert outputs[0].read_text().strip()=='Audio processed successfully'
+    assert outputs[0].read_text(encoding='utf-8').strip()=='Audio processed successfully'
     assert len(calls)==2
     assert any('Fixing audio compatibility' in m for m in messages)
     assert not list((tmp_path/'out').glob('.decoder-*'))
@@ -86,7 +86,7 @@ def test_known_extractor_problems_only():
 
 
 def test_tool_repair_only_known_dependencies(tmp_path,monkeypatch):
-    uv=tmp_path/'.mochi'/'tools'/'uv'
+    uv=tmp_path/'.mochi'/'tools'/('uv.exe' if os.name=='nt' else 'uv')
     uv.parent.mkdir(parents=True);uv.write_bytes(b'tool')
     (tmp_path/'app').mkdir(); (tmp_path/'app'/'requirements.txt').write_text('av<19\n')
     captured=[]
@@ -106,13 +106,13 @@ def test_tool_repair_only_known_dependencies(tmp_path,monkeypatch):
 
 
 def test_1hack_credit_is_real_link():
-    html=(Path(core.__file__).parent/'assets'/'index.html').read_text()
+    html=(Path(core.__file__).parent/'assets'/'index.html').read_text(encoding='utf-8')
     assert 'Made with' in html and 'https://onehack.st/' in html
     assert 'rel="noopener noreferrer"' in html
 
 
 def test_compatible_pin_prevents_new_bad_setup():
-    content=(Path(core.__file__).parent/'requirements.txt').read_text()
+    content=(Path(core.__file__).parent/'requirements.txt').read_text(encoding='utf-8')
     assert 'av>=16,<19' in content
     assert 'faster-whisper>=1.1,<1.3' in content
 
@@ -120,15 +120,15 @@ def test_compatible_pin_prevents_new_bad_setup():
 def test_broken_ffmpeg_is_repaired(tmp_path,monkeypatch):
     directory=core.ffmpeg_folder(tmp_path);directory.mkdir(parents=True)
     for name in ('ffmpeg','ffprobe'):
-        p=directory/name;p.write_bytes(b'not an executable')
+        p=directory/(name+('.exe' if os.name=='nt' else ''));p.write_bytes(b'not an executable')
     # Real installed tools supply the repair source; corrupt copies must be replaced.
     result=core.ensure_ffmpeg(tmp_path)
-    assert (Path(result)/'ffmpeg').stat().st_size>1000
-    assert (Path(result)/'ffprobe').stat().st_size>1000
+    assert (Path(result)/('ffmpeg.exe' if os.name=='nt' else 'ffmpeg')).stat().st_size>1000
+    assert (Path(result)/('ffprobe.exe' if os.name=='nt' else 'ffprobe')).stat().st_size>1000
 
 
 def test_repair_respects_cancel_before_changes(tmp_path,monkeypatch):
-    uv=tmp_path/'.mochi'/'tools'/'uv';uv.parent.mkdir(parents=True);uv.write_bytes(b'tool')
+    uv=tmp_path/'.mochi'/'tools'/('uv.exe' if os.name=='nt' else 'uv');uv.parent.mkdir(parents=True);uv.write_bytes(b'tool')
     cancelled=threading.Event();cancelled.set()
     with pytest.raises(doctor.RepairError,match='cancelled'):
         doctor.repair(tmp_path,lambda *x:None,cancelled=cancelled)
@@ -142,6 +142,6 @@ def test_private_repair_history_is_bounded_and_reuses_failures(tmp_path):
     for _ in range(90):
         doctor.remember_fix(tmp_path,'tools','repair_dependencies',True)
     import json
-    entries=json.loads((tmp_path/'.mochi'/'fix-history.json').read_text())
+    entries=json.loads((tmp_path/'.mochi'/'fix-history.json').read_text(encoding='utf-8'))
     assert len(entries)==64
     assert all('url' not in e and 'path' not in e for e in entries)

@@ -40,20 +40,25 @@ def test_prepare_icon_and_launcher(work):
     assert icon.read_bytes()[:8]==b'\x89PNG\r\n\x1a\n'
     assert (work/'.mochi'/'icons'/'favicon.ico').stat().st_size>1000
     assert (work/'.mochi'/'icons'/'mochi.icns').stat().st_size>1000
-    assert (work/'Run Mochi Now.desktop').exists()
-    assert str(work/'.mochi'/'run.sh') in (work/'Run Mochi Now.desktop').read_text()
-    assert (work/'.mochi'/'run.sh').stat().st_mode & 0o100
+    if os.name == 'nt':
+        assert (work/'Run Mochi Now.lnk').exists() or (work/'Run Mochi Now.cmd').exists()
+    elif sys.platform == 'darwin':
+        assert (work/'Run Mochi Now.app').exists()
+    else:
+        assert (work/'Run Mochi Now.desktop').exists()
+        assert str(work/'.mochi'/'run.sh') in (work/'Run Mochi Now.desktop').read_text(encoding='utf-8')
+        assert (work/'.mochi'/'run.sh').stat().st_mode & 0o100
 
 
 def test_finish_only_launcher_readme_visible(work):
     (work/'1 INSTALL & OPEN - Linux.sh').write_text('existing installer')
     (work/'LOOK - PREVIEW.png').write_text('example')
     (work/'README - START HERE.txt').write_text('old')
-    (work/'README.txt').write_text('✦ MOCHI · FIRST TIME ✦\nMade with love by 1Hack\n')
+    (work/'README.txt').write_text('✦ MOCHI · FIRST TIME ✦\nMade with love by 1Hack\n', encoding='utf-8')
     install_layout.prepare()
     install_layout.finish()
-    assert sorted(p.name for p in work.iterdir() if not p.name.startswith('.'))==['Run Mochi Now.desktop','📖 READ ME.txt']
-    readme=(work/'📖 READ ME.txt').read_text()
+    assert sorted(p.name for p in work.iterdir() if not p.name.startswith('.'))==[('Run Mochi Now.lnk' if (work/'Run Mochi Now.lnk').exists() else 'Run Mochi Now.cmd') if os.name == 'nt' else ('Run Mochi Now.app' if sys.platform == 'darwin' else 'Run Mochi Now.desktop'),'📖 READ ME.txt']
+    readme=(work/'📖 READ ME.txt').read_text(encoding='utf-8')
     assert len(readme)<500 and '1Hack' in readme and '📂' in readme
     assert not (work/'app').exists()
     assert (work/'.mochi'/'app'/'core.py').exists()
@@ -70,7 +75,7 @@ def test_never_delete_unrelated_files_or_existing_downloads(work):
     assert output_dir(work)==work/'My Downloads'
     install_layout.prepare(); install_layout.finish()
     assert (work/'Family video.mp4').read_bytes()==b'family memories'
-    assert (work/'Notes.txt').read_text()=='keep'
+    assert (work/'Notes.txt').read_text(encoding='utf-8')=='keep'
     assert (work/'.mochi'/'Downloads'/'test'/'video.mp4').read_bytes()==b'example'
     assert not (work/'My Downloads').exists()
     assert (work/'.mochi'/'models'/'big-model.bin').read_bytes()==b'1234'
@@ -84,7 +89,7 @@ def test_no_cleanup_before_success(work):
     (work/'1 INSTALL & OPEN - Linux.sh').write_text('original')
     install_layout.prepare()
     assert (work/'app').exists()
-    assert (work/'1 INSTALL & OPEN - Linux.sh').read_text()=='original'
+    assert (work/'1 INSTALL & OPEN - Linux.sh').read_text(encoding='utf-8')=='original'
 
 
 def test_upgrade_backup_and_rollback(work):
@@ -92,9 +97,9 @@ def test_upgrade_backup_and_rollback(work):
     old.mkdir(parents=True)
     (old/'my-installation.txt').write_text('old working version')
     install_layout.prepare()
-    assert (work/'.mochi'/'app.previous'/'my-installation.txt').read_text()=='old working version'
+    assert (work/'.mochi'/'app.previous'/'my-installation.txt').read_text(encoding='utf-8')=='old working version'
     install_layout.rollback()
-    assert (old/'my-installation.txt').read_text()=='old working version'
+    assert (old/'my-installation.txt').read_text(encoding='utf-8')=='old working version'
     assert not (work/'.mochi'/'app.previous').exists()
     assert (work/'app').exists()
 
@@ -108,9 +113,10 @@ def test_upgrade_success_cleans_backup(work):
     install_layout.prepare();install_layout.finish()
     assert not (work/'.mochi'/'app.previous').exists()
     assert not (work/'.mochi'/'app'/'old.py').exists()
-    assert (work/'.mochi'/'Downloads'/'done.txt').read_text()=='kept'
+    assert (work/'.mochi'/'Downloads'/'done.txt').read_text(encoding='utf-8')=='kept'
 
 
+@pytest.mark.skipif(os.name == 'nt', reason='macOS bundle needs Unix host')
 def test_mac_launcher_bundle_uses_icon_and_relative_root(work,monkeypatch):
     monkeypatch.setattr(install_layout.sys,'platform','darwin')
     install_layout.prepare()
@@ -119,12 +125,13 @@ def test_mac_launcher_bundle_uses_icon_and_relative_root(work,monkeypatch):
     meta=plistlib.loads((bundle/'Contents'/'Info.plist').read_bytes())
     assert meta['CFBundleIconFile']=='mochi.icns'
     assert (bundle/'Contents'/'Resources'/'mochi.icns').exists()
-    contents=(bundle/'Contents'/'MacOS'/'Mochi').read_text()
+    contents=(bundle/'Contents'/'MacOS'/'Mochi').read_text(encoding='utf-8')
     assert '"$0")/../../..' in contents
     install_layout.finish()
     assert sorted(p.name for p in work.iterdir() if not p.name.startswith('.'))==['Run Mochi Now.app','📖 READ ME.txt']
 
 
+@pytest.mark.skipif(os.name == 'nt', reason='Unix shell not available on Windows')
 def test_linux_launcher_shell_is_valid(work):
     install_layout.prepare()
     for sh in ['run.sh','app/bootstrap.sh']:
@@ -134,7 +141,7 @@ def test_linux_launcher_shell_is_valid(work):
 
 
 def test_favicon_and_branding_source():
-    html=(SOURCE/'assets'/'index.html').read_text()
+    html=(SOURCE/'assets'/'index.html').read_text(encoding='utf-8')
     assert '/assets/mochi.png' in html and '/favicon.ico' in html
     assert 'id="repair"' in html and 'repair hidden' not in html
     assert html.count('id="repair"') == 1
@@ -149,7 +156,7 @@ def test_interrupted_upgrade_self_recovers(work):
     (state/'app.previous'/'working-code.py').write_text('old good code')
     install_layout.prepare()
     assert (state/'app'/'core.py').exists()
-    assert (state/'app.previous'/'working-code.py').read_text()=='old good code'
+    assert (state/'app.previous'/'working-code.py').read_text(encoding='utf-8')=='old good code'
     install_layout.finish()
     assert not (state/'app.previous').exists()
 
@@ -171,9 +178,9 @@ def test_migrate_downloads_does_not_overwrite_collisions(work):
     new=work/'.mochi'/'Downloads';new.mkdir(parents=True)
     (new/'same.mp4').write_text('existing')
     install_layout.prepare();install_layout.finish()
-    assert (new/'same.mp4').read_text()=='existing'
-    assert (old/'same.mp4').read_text()=='original'
-    assert (new/'unique.mp4').read_text()=='unique'
+    assert (new/'same.mp4').read_text(encoding='utf-8')=='existing'
+    assert (old/'same.mp4').read_text(encoding='utf-8')=='original'
+    assert (new/'unique.mp4').read_text(encoding='utf-8')=='unique'
 
 
 def test_migrated_output_path_uses_hidden_location(work):
@@ -187,12 +194,12 @@ def test_readme_emoji_name_and_credit(work):
     install_layout.prepare();install_layout.finish()
     readme=work/'📖 READ ME.txt'
     assert readme.exists()
-    assert '💜 Made with love by 1Hack — OneHack.st' in readme.read_text()
+    assert '💜 Made with love by 1Hack — OneHack.st' in readme.read_text(encoding='utf-8')
     assert not (work/'README.txt').exists()
 
 def test_old_generated_readme_is_retired_only_when_owned(work):
     old=work/'README.txt'
-    old.write_text('✦ MOCHI · FIRST TIME ✦\nMade with love by 1Hack\n')
+    old.write_text('✦ MOCHI · FIRST TIME ✦\nMade with love by 1Hack\n', encoding='utf-8')
     install_layout.prepare();install_layout.finish()
     assert not old.exists()
 
@@ -200,7 +207,7 @@ def test_personal_readme_is_never_removed(work):
     old=work/'README.txt'
     old.write_text('my personal notes')
     install_layout.prepare();install_layout.finish()
-    assert old.read_text()=='my personal notes'
+    assert old.read_text(encoding='utf-8')=='my personal notes'
 
 def test_favicon_purple_contrast():
     from PIL import Image

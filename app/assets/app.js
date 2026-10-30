@@ -2,7 +2,7 @@
 const KEY=document.querySelector('meta[name="mochi-key"]').content;
 const el=id=>document.getElementById(id);
 const mode=()=>document.querySelector('input[name="mode"]:checked').value;
-let busy=false,qualitiesBusy=false, lastState='ready';
+let busy=false,qualitiesBusy=false, lastState='ready', restoredPending=false;
 async function api(route,body){
   const options={headers:{'X-Mochi-Key':KEY}};
   if(body!==undefined){options.method='POST';options.headers['Content-Type']='application/json';options.body=JSON.stringify(body)}
@@ -74,9 +74,20 @@ async function refresh(){
   try{
     const st=await api('/api/status');
     if(st.state==='ready'){busy=false;el('repair').disabled=false;return;}
+    if(st.state==='interrupted' && st.pending && !restoredPending){
+      restoredPending=true;
+      el('url').value=st.pending.url;
+      const opts=st.pending.options||{};
+      const radio=document.querySelector('input[name="mode"][value="'+opts.mode+'"]');
+      if(radio)radio.checked=true;
+      for(const [id,value] of [['audio-format',opts.audio_format],['speech-quality',opts.speech_quality],['language',opts.language]]){
+        if(value!=null && [...el(id).options].some(opt=>opt.value===String(value)))el(id).value=String(value);
+      }
+      selectedMode();
+    }
     lastState=st.state;
     el('activity').classList.remove('hidden');
-    el('status-heading').textContent=st.state==='done'?'A little magic, completed!':st.state==='error'?'Almost! Let’s fix this':st.state==='cancelled'?'Cancelled':st.state==='repaired'?'Mochi is ready again!':st.state==='repairing'?'Fixing your tools…':'Making your video…';
+    el('status-heading').textContent=st.state==='done'?'A little magic, completed!':st.state==='error'?'Almost! Let’s fix this':st.state==='cancelled'?'Cancelled':st.state==='repaired'?'Mochi is ready again!':st.state==='repairing'?'Fixing your tools…':st.state==='interrupted'?'Ready to continue':'Making your video…';
     el('status-text').textContent=st.message;
     const pct=Number(st.percent)||0;el('percent').textContent=pct+'%';el('progress-fill').style.width=pct+'%';el('progress').setAttribute('aria-valuenow',String(pct));
     busy=st.state==='working'||st.state==='repairing';

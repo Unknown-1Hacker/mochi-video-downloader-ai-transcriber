@@ -16,7 +16,7 @@ ROOT = root_dir(__file__)
 STATE_DIR = ROOT / '.mochi'
 SESSION = STATE_DIR / 'server.json'
 LOG = STATE_DIR / 'studio.log'
-APP_VERSION = '1.2.0'
+from version import APP_VERSION
 
 
 def valid_session():

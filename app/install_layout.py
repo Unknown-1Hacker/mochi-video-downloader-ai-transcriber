@@ -9,6 +9,7 @@ import json
 import urllib.request
 from pathlib import Path
 from mochi_paths import root_dir
+from version import APP_VERSION
 
 ROOT = root_dir(__file__)
 STATE = ROOT / '.mochi'
@@ -119,7 +120,7 @@ def _write_mac_app():
     plist = {'CFBundleIdentifier':'st.onehack.mochi', 'CFBundleName':'Mochi Video Studio',
              'CFBundleDisplayName':'Run Mochi Now', 'CFBundleExecutable':'Mochi',
              'CFBundleIconFile':'mochi.icns', 'CFBundlePackageType':'APPL',
-             'CFBundleVersion':'1.3.0', 'CFBundleShortVersionString':'1.3.0',
+             'CFBundleVersion':APP_VERSION, 'CFBundleShortVersionString':APP_VERSION,
              'NSHighResolutionCapable':True}
     with (app/'Contents'/'Info.plist').open('wb') as f:plistlib.dump(plist,f)
     shutil.copy2(STATE/'icons'/'mochi.icns', resources/'mochi.icns')
@@ -208,7 +209,7 @@ def _older_app_is_busy():
             with urllib.request.urlopen(urllib.request.Request(base+path,headers=head),timeout=1) as r:
                 return json.load(r)
         health=get('/api/health')
-        if health.get('version')=='1.3.0':
+        if health.get('version')==APP_VERSION:
             return False
         return get('/api/status').get('state') in ('working','repairing')
     except (OSError,ValueError,KeyError,TypeError):
