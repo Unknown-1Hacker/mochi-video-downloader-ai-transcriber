@@ -136,7 +136,7 @@ exec /bin/sh "$ROOT/.mochi/run.sh"
 
 def _write_linux_desktop():
     # Desktop Exec escapes unsafe path characters; Path is absolute by design.
-    p = str(STATE / 'run.sh').replace('\\','\\\\').replace('"','\\"').replace('`','\\`').replace('
+    p = str(STATE / 'run.sh').replace('\\','\\\\').replace('"','\\"').replace('`','\\`').replace('$','\\$').replace('%','%%')
     desktop = ROOT/'Run Mochi Now.desktop'
     desktop.write_text('[Desktop Entry]\nType=Application\nVersion=1.0\nName=Run Mochi Now\nComment=Your cozy video studio\n'
                        'Exec=/bin/sh "'+p+'"\nIcon='+str(STATE/'icons'/'mochi.png')+'\nTerminal=false\nCategories=AudioVideo;\nStartupNotify=true\n',encoding='utf-8')
