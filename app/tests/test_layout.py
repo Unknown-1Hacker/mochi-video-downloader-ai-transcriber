@@ -271,7 +271,7 @@ def test_postinstall_launcher_reports_errors_and_logs(work, monkeypatch):
     state = work / '.mochi'
     python = state / 'venv' / 'bin' / 'python'
     python.parent.mkdir(parents=True)
-    python.write_text('#!/bin/sh\nexit 7\n', encoding='utf-8')
+    python.write_text('#!/bin/sh\nif [ "$1" = "-c" ]; then exit 0; fi\nexit 7\n', encoding='utf-8')
     python.chmod(0o755)
     deno = state / 'deno' / 'bin' / 'deno'
     deno.parent.mkdir(parents=True)
