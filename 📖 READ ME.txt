@@ -4,6 +4,7 @@
 🚀 FIRST TIME: Open the Install-Mochi launcher for your OS (Windows / Mac / Linux).
 🐧 Linux opens as text? Open a terminal here: sh ./Install-Mochi-Linux.sh
 ▶  NEXT TIME: Double-click Run Mochi Now.
+🐧 Linux shortcut blocked? Right-click → Allow Launching; fallback: sh .mochi/run.sh
 🔗 Paste a YouTube link → choose → Make it happen.
 📂 Saved files: tap Open my saved files after completion.
 🛠 Stuck? Fix my tools (top right).

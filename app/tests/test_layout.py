@@ -205,6 +205,7 @@ def test_readme_emoji_name_and_credit(work):
     readme=work/'📖 READ ME.txt'
     assert readme.exists()
     assert '💜 Made with love by 1Hack — OneHack.st' in readme.read_text(encoding='utf-8')
+    assert 'sh .mochi/run.sh' in readme.read_text(encoding='utf-8')
     assert not (work/'README.txt').exists()
 
 def test_old_generated_readme_is_retired_only_when_owned(work):

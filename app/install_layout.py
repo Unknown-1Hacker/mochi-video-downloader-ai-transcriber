@@ -22,6 +22,7 @@ README = """✦ MOCHI VIDEO STUDIO ✦
 ======================
 
 ▶ Double-click  Run Mochi Now
+🐧 Linux shortcut blocked? Right-click → Allow Launching; fallback: sh .mochi/run.sh
 🔗 Paste a YouTube link
 🎬 Pick video / audio / subtitles / text
 ✨ Press Make it happen
