@@ -139,6 +139,14 @@ def test_extractor_failure_auto_repairs_once(server,monkeypatch):
     assert len(calls)==2 and len(repair_calls)==1
 
 
+def test_approved_bunny_asset_is_really_served(server):
+    base, _, _ = server
+    with request(base, '/assets/hero-bunny.png?v=1.5.0') as resp:
+        assert resp.status == 200
+        assert resp.headers['Content-Type'] == 'image/png'
+        assert resp.read()[:8] == b'\x89PNG\r\n\x1a\n'
+
+
 def test_real_favicon_served(server):
     base,token,_=server
     with request(base,'/favicon.ico') as resp:

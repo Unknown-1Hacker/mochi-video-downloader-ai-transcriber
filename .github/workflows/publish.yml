@@ -10,7 +10,7 @@ on:
       version:
         description: Release version (for example, v0.2.0)
         required: true
-        default: v0.2.0
+        default: v0.2.1
         type: string
 
 permissions:
@@ -45,9 +45,9 @@ jobs:
           from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 
           launchers = [
-              Path('1 INSTALL & OPEN - Windows.cmd'),
-              Path('1 INSTALL & OPEN - Mac.command'),
-              Path('1 INSTALL & OPEN - Linux.sh'),
+              Path('Install-Mochi-Windows.cmd'),
+              Path('Install-Mochi-Mac.command'),
+              Path('Install-Mochi-Linux.sh'),
               Path('📖 READ ME.txt'),
           ]
           source = [p for p in Path('app').rglob('*') if p.is_file()
@@ -71,9 +71,9 @@ jobs:
               members = set(z.namelist())
               assert {'Mochi/app/studio.py', 'Mochi/app/version.py', 'Mochi/app/guardian.py',
                   'Mochi/app/requirements.lock', 'Mochi/app/assets/hero-bunny.png',
-                      'Mochi/1 INSTALL & OPEN - Windows.cmd',
-                      'Mochi/1 INSTALL & OPEN - Mac.command',
-                      'Mochi/1 INSTALL & OPEN - Linux.sh'} <= members
+                      'Mochi/Install-Mochi-Windows.cmd',
+                      'Mochi/Install-Mochi-Mac.command',
+                      'Mochi/Install-Mochi-Linux.sh'} <= members
               assert not any('/tests/' in n or '/__pycache__/' in n for n in members)
           print(f'✅ One clean package: {len(files)} files')
           PY
@@ -87,7 +87,7 @@ jobs:
 
           ### ✨ Get started
           1. Download **Mochi.zip** below (not Source code).
-          2. Extract it, then double-click **1 INSTALL & OPEN** for Windows, Mac, or Linux.
+          2. Extract it, then open **Install-Mochi-Windows.cmd / Mac.command / Linux.sh** for your OS.
           3. Paste a link → pick what you want → **Make it happen!**
 
           🔒 Speech recognition runs on your computer. Internet is needed for setup, AI models, and video downloads.
@@ -100,7 +100,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          VERSION: ${{ inputs.version || 'v0.2.0' }}
+          VERSION: ${{ inputs.version || 'v0.2.1' }}
         run: |
           if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo 'Expected a version such as v0.1.0'
