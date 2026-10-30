@@ -105,7 +105,7 @@ jobs:
             exit 1
           fi
           gh release create "$VERSION" \
-            'dist/Mochi.zip#🐰 Download Mochi' \
+            dist/Mochi.zip \
             --title "🐰 Mochi · $VERSION" \
             --notes-file dist/RELEASE.md \
             --target "$GITHUB_SHA" \
