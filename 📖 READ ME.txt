@@ -1,7 +1,7 @@
 ✦ MOCHI · QUICK START ✦
 =======================
 
-🚀 FIRST TIME: Open Install-Mochi-Windows.cmd / Mac.command / Linux.sh (your OS).
+🚀 FIRST TIME: Open the Install-Mochi launcher for your OS (Windows / Mac / Linux).
 🐧 Linux opens as text? Open a terminal here: sh ./Install-Mochi-Linux.sh
 ▶  NEXT TIME: Double-click Run Mochi Now.
 🔗 Paste a YouTube link → choose → Make it happen.

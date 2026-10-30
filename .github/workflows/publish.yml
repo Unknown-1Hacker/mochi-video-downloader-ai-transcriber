@@ -123,7 +123,7 @@ jobs:
 
           ### ✨ Get started
           1. Download **Mochi.zip** below (not Source code).
-          2. Extract it, then open **Install-Mochi-Windows.cmd / Mac.command / Linux.sh** for your OS.
+          2. Extract it, then open the **Install-Mochi** launcher for your OS (Windows / Mac / Linux).
           3. Paste a link → pick what you want → **Make it happen!**
 
           🔒 Speech recognition runs on your computer. Internet is needed for setup, AI models, and video downloads.
