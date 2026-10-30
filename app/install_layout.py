@@ -22,6 +22,7 @@ README = """✦ MOCHI VIDEO STUDIO ✦
 ======================
 
 ▶ Double-click  Run Mochi Now
+🐧 Linux shortcut blocked? Right-click → Allow Launching; fallback: sh .mochi/run.sh
 🔗 Paste a YouTube link
 🎬 Pick video / audio / subtitles / text
 ✨ Press Make it happen
@@ -55,34 +56,34 @@ def _copy_our_icon():
 def _write_run_sh():
     script = STATE / 'run.sh'
     script.write_text('''#!/bin/sh
-ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd) || exit 1
 STATE="$ROOT/.mochi"
 PY="$STATE/venv/bin/python"
 APP="$STATE/app"
+LOG="$STATE/launch.log"
+if [ ! -d "$APP" ]; then
+  printf 'Mochi app files are missing. Extract a fresh Mochi.zip and run setup again.\n' >> "$LOG"
+  exit 1
+fi
 if [ ! -x "$PY" ] || ! "$PY" -c 'import importlib.util as u; assert u.find_spec("yt_dlp") and u.find_spec("faster_whisper")' >/dev/null 2>&1; then
-  /bin/sh "$APP/bootstrap.sh" || exit $?
-  exit 0
+  /bin/sh "$APP/bootstrap.sh" >> "$LOG" 2>&1
+  CODE=$?
+elif [ ! -x "$STATE/deno/bin/deno" ] && ! command -v deno >/dev/null 2>&1; then
+  /bin/sh "$APP/bootstrap.sh" >> "$LOG" 2>&1
+  CODE=$?
+else
+  export PATH="$STATE/deno/bin:$PATH"
+  "$PY" "$APP/launcher.py" >> "$LOG" 2>&1
+  CODE=$?
 fi
-if [ ! -x "$STATE/deno/bin/deno" ] && ! command -v deno >/dev/null 2>&1; then
-  /bin/sh "$APP/bootstrap.sh" || exit $?
-  exit 0
-fi
-export PATH="$STATE/deno/bin:$PATH"
-"$PY" "$APP/launcher.py" >> "$STATE/launch.log" 2>&1
-CODE=$?
 if [ "$CODE" -ne 0 ]; then
-  if command -v zenity >/dev/null 2>&1; then
-    zenity --error --title='Mochi needs help' --text='Could not open Mochi. Check .mochi/launch.log or try setup again.' 2>/dev/null || true
-  elif command -v notify-send >/dev/null 2>&1; then
-    notify-send 'Mochi needs help' 'Open .mochi/launch.log for details' || true
-  elif command -v osascript >/dev/null 2>&1; then
-    osascript -e 'display alert "Mochi needs help" message "See .mochi/launch.log"' >/dev/null 2>&1 || true
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send 'Mochi needs help' 'Open .mochi/launch.log or run setup again' >/dev/null 2>&1 || true
   fi
 fi
 exit "$CODE"
 ''', encoding='utf-8')
     script.chmod(0o755)
-
 
 def _write_run_ps1():
     (STATE / 'run.ps1').write_text(r'''$ErrorActionPreference = 'Stop'
@@ -172,11 +173,20 @@ def prepare():
             _copy_our_icon()
             return
         raise RuntimeError('Mochi installation files are missing.')
+    # Never swap app files while any running job is using them.
+    if LIVE.is_dir() and _older_app_is_busy():
+        raise RuntimeError('Mochi is still working. Finish or cancel the current job before upgrading.')
     if NEXT.exists():
         shutil.rmtree(NEXT)
     # Heal an interrupted prior upgrade before attempting another one.
     if BACKUP.exists():
         rollback()
+    # Never replace a previously working installation with missing launch/UI files.
+    required = ('launcher.py', 'studio.py', 'version.py', 'assets/index.html',
+                'assets/app.js', 'assets/style.css', 'assets/hero-bunny.png')
+    if any(not (STAGED / name).is_file() or (STAGED / name).stat().st_size == 0
+           for name in required):
+        raise RuntimeError('Mochi setup files are incomplete. Extract a fresh Mochi.zip and retry.')
     shutil.copytree(STAGED,NEXT,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
     if LIVE.exists():
         # Interrupted previous upgrade? Don't destroy the original backup.
@@ -211,7 +221,7 @@ def _older_app_is_busy():
             with urllib.request.urlopen(urllib.request.Request(base+path,headers=head),timeout=1) as r:
                 return json.load(r)
         health=get('/api/health')
-        if health.get('version')==APP_VERSION:
+        if health.get('ok') is not True:
             return False
         return get('/api/status').get('state') in ('working','repairing')
     except (OSError,ValueError,KeyError,TypeError):

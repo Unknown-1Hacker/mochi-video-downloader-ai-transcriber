@@ -1,2 +1,2 @@
 """One internal app protocol version shared by launcher, studio and platform shortcuts."""
-APP_VERSION = "0.2.1"
+APP_VERSION = "0.2.2"

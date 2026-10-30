@@ -33,7 +33,17 @@ def valid_session():
             base = f'http://127.0.0.1:{port}'
             open_url = f'{base}/?key={quote(key)}'
             if health.get('version') == APP_VERSION:
-                return open_url
+                # A running studio must serve the *real* UI assets, not just a
+                # healthy JSON endpoint. Catch stale or partially updated installs.
+                try:
+                    asset = urllib.request.Request(base + '/assets/hero-bunny.png',
+                                                   headers={'X-Mochi-Key': key})
+                    with urllib.request.urlopen(asset, timeout=1.5) as reply:
+                        if reply.read().startswith(b'\x89PNG\r\n\x1a\n'):
+                            return open_url
+                except (OSError, urllib.error.URLError):
+                    pass
+                print('Mochi found an outdated or incomplete studio. Restarting it safely…')
             # User has replaced Mochi files while an older server runs.
             # Never interrupt an active download/transcription for an upgrade.
             req = urllib.request.Request(base+'/api/status', headers={'X-Mochi-Key':key})
@@ -70,7 +80,7 @@ def launch():
             else:
                 kwargs['start_new_session'] = True
             subprocess.Popen([sys.executable, str(app_dir(ROOT) / 'studio.py')], **kwargs)
-        for _ in range(60):
+        for _ in range(150):
             time.sleep(0.1)
             current = valid_session()
             if current:

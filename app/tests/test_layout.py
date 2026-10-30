@@ -205,6 +205,7 @@ def test_readme_emoji_name_and_credit(work):
     readme=work/'📖 READ ME.txt'
     assert readme.exists()
     assert '💜 Made with love by 1Hack — OneHack.st' in readme.read_text(encoding='utf-8')
+    assert 'sh .mochi/run.sh' in readme.read_text(encoding='utf-8')
     assert not (work/'README.txt').exists()
 
 def test_old_generated_readme_is_retired_only_when_owned(work):
@@ -223,3 +224,147 @@ def test_favicon_purple_contrast():
     from PIL import Image
     im=Image.open(SOURCE/'assets'/'mochi.png').convert('RGBA')
     assert im.getpixel((130,300))[:3] == (150,127,234)
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='POSIX post-install launcher')
+def test_real_postinstall_linux_shortcut_and_log(work, monkeypatch):
+    """Use the actual generated private launcher, after cleanup, from a complex path."""
+    import configparser
+    import shlex
+    monkeypatch.setattr(install_layout.sys, 'platform', 'linux')
+    install_layout.prepare()
+    install_layout.finish()
+    state = work / '.mochi'
+    assert not (work / 'app').exists()
+    python = state / 'venv' / 'bin' / 'python'
+    python.parent.mkdir(parents=True)
+    python.write_text(
+        '#!/bin/sh\n'
+        'if [ "$1" = "-c" ]; then exit 0; fi\n'
+        'printf "%s\\n" "$1" >> "$MOCHI_TEST_MARKER"\n',
+        encoding='utf-8')
+    python.chmod(0o755)
+    deno = state / 'deno' / 'bin' / 'deno'
+    deno.parent.mkdir(parents=True)
+    deno.write_text('#!/bin/sh\nexit 0\n', encoding='utf-8')
+    deno.chmod(0o755)
+    marker = work / 'opened'
+    env = os.environ.copy()
+    env['MOCHI_TEST_MARKER'] = str(marker)
+    desktop = work / 'Run Mochi Now.desktop'
+    config = configparser.ConfigParser(interpolation=None)
+    config.read(desktop, encoding='utf-8')
+    command = shlex.split(config['Desktop Entry']['Exec'])
+    assert command == ['/bin/sh', str(state / 'run.sh')]
+    assert config['Desktop Entry']['Terminal'] == 'false'
+    result = subprocess.run(command, cwd=work, env=env,
+                            capture_output=True, text=True, timeout=15)
+    assert result.returncode == 0, result.stderr
+    assert marker.read_text(encoding='utf-8').strip() == str(state / 'app' / 'launcher.py')
+    assert (state / 'launch.log').is_file()
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='POSIX shell launcher')
+def test_postinstall_launcher_reports_errors_and_logs(work, monkeypatch):
+    monkeypatch.setattr(install_layout.sys, 'platform', 'linux')
+    install_layout.prepare()
+    install_layout.finish()
+    state = work / '.mochi'
+    python = state / 'venv' / 'bin' / 'python'
+    python.parent.mkdir(parents=True)
+    python.write_text('#!/bin/sh\nif [ "$1" = "-c" ]; then exit 0; fi\nexit 7\n', encoding='utf-8')
+    python.chmod(0o755)
+    deno = state / 'deno' / 'bin' / 'deno'
+    deno.parent.mkdir(parents=True)
+    deno.write_text('#!/bin/sh\nexit 0\n', encoding='utf-8')
+    deno.chmod(0o755)
+    result = subprocess.run(['/bin/sh', str(state / 'run.sh')],
+                            cwd=work, capture_output=True, text=True, timeout=15)
+    assert result.returncode == 7
+    assert (state / 'launch.log').exists()
+    assert 'osascript' not in (state / 'run.sh').read_text(encoding='utf-8')
+    assert 'zenity --error' not in (state / 'run.sh').read_text(encoding='utf-8')
+
+
+def test_incomplete_upgrade_cannot_replace_previous_app(work):
+    state = work / '.mochi'
+    previous = state / 'app'
+    previous.mkdir(parents=True)
+    (previous / 'good.txt').write_text('working code', encoding='utf-8')
+    (work / 'app' / 'assets' / 'hero-bunny.png').unlink()
+    with pytest.raises(RuntimeError, match='incomplete'):
+        install_layout.prepare()
+    assert (previous / 'good.txt').read_text(encoding='utf-8') == 'working code'
+    assert not (state / 'app.previous').exists()
+
+
+def test_upgrade_rejects_any_active_session_before_swapping_app(work, monkeypatch):
+    state = work / '.mochi'
+    previous = state / 'app'
+    previous.mkdir(parents=True)
+    (previous / 'active.txt').write_text('running task', encoding='utf-8')
+    monkeypatch.setattr(install_layout, '_older_app_is_busy', lambda: True)
+    with pytest.raises(RuntimeError, match='still working'):
+        install_layout.prepare()
+    assert (previous / 'active.txt').read_text(encoding='utf-8') == 'running task'
+    assert not (state / 'app.previous').exists()
+    assert not (state / 'app.next').exists()
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='macOS app wrapper is a POSIX script')
+def test_installed_mac_app_executes_private_launcher(work, monkeypatch):
+    monkeypatch.setattr(install_layout.sys, 'platform', 'darwin')
+    install_layout.prepare()
+    install_layout.finish()
+    state = work / '.mochi'
+    exe = state / 'venv' / 'bin' / 'python'
+    exe.parent.mkdir(parents=True)
+    exe.write_text('#!/bin/sh\nif [ "$1" = "-c" ]; then exit 0; fi\n'
+                   'printf "%s\\n" "$1" > "$MOCHI_TEST_MARKER"\n',
+                   encoding='utf-8')
+    exe.chmod(0o755)
+    deno = state / 'deno' / 'bin' / 'deno'
+    deno.parent.mkdir(parents=True)
+    deno.write_text('#!/bin/sh\nexit 0\n', encoding='utf-8')
+    deno.chmod(0o755)
+    marker = work / 'opened-mac'
+    env = os.environ.copy()
+    env['MOCHI_TEST_MARKER'] = str(marker)
+    entry = work / 'Run Mochi Now.app' / 'Contents' / 'MacOS' / 'Mochi'
+    result = subprocess.run(['/bin/sh', str(entry)], cwd=work, env=env,
+                            capture_output=True, text=True, timeout=15)
+    assert result.returncode == 0, result.stderr
+    assert marker.read_text(encoding='utf-8').strip() == str(state / 'app' / 'launcher.py')
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='Windows shortcut needs native COM')
+def test_windows_shortcut_has_valid_target_and_script(work):
+    """Check the real .lnk destination and PowerShell syntax on Windows CI."""
+    install_layout.prepare()
+    script = work / '.mochi' / 'run.ps1'
+    env = os.environ.copy()
+    env['MOCHI_RUN_SCRIPT'] = str(script)
+    parse = (
+        '$tokens=$null; $errs=$null; '
+        '[System.Management.Automation.Language.Parser]::ParseFile('
+        '$env:MOCHI_RUN_SCRIPT,[ref]$tokens,[ref]$errs) | Out-Null; '
+        'if ($errs.Count -ne 0) { exit 1 }'
+    )
+    assert subprocess.run(['powershell.exe', '-NoProfile', '-Command', parse],
+                          env=env, capture_output=True, timeout=20).returncode == 0
+    link = work / 'Run Mochi Now.lnk'
+    if link.exists():
+        env['MOCHI_SHORTCUT'] = str(link)
+        inspect = (
+            '$w = New-Object -ComObject WScript.Shell; '
+            '$l = $w.CreateShortcut($env:MOCHI_SHORTCUT); '
+            'Write-Output $l.TargetPath; Write-Output $l.Arguments'
+        )
+        output = subprocess.check_output(
+            ['powershell.exe', '-NoProfile', '-Command', inspect],
+            env=env, text=True, timeout=20).splitlines()
+        assert output[0].lower().endswith('powershell.exe')
+        assert '-ExecutionPolicy Bypass' in output[1]
+        assert 'run.ps1' in output[1]
+    else:
+        assert (work / 'Run Mochi Now.cmd').is_file()

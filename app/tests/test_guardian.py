@@ -1,5 +1,6 @@
 """Guardian regression tests: recovery, privacy and version consistency."""
 import os
+import pytest
 from pathlib import Path
 
 import guardian
@@ -13,7 +14,7 @@ URL = "https://www.youtube.com/watch?v=5bKz"
 
 def test_one_version_for_client_server_and_mac_bundle():
     assert studio.APP_VERSION == launcher.APP_VERSION == version.APP_VERSION
-    assert version.APP_VERSION == "0.2.1"
+    assert version.APP_VERSION == "0.2.2"
 
 
 def test_private_job_checkpoint_and_manual_recovery(tmp_path, monkeypatch):
@@ -103,3 +104,59 @@ def test_manual_repair_prefers_release_lock(tmp_path, monkeypatch):
     monkeypatch.setattr(core, "ensure_ffmpeg", lambda root: str(root))
     doctor.repair(tmp_path, lambda *x: None)
     assert calls[0][-1] == str(lock)
+
+
+@pytest.mark.parametrize("bunny_is_served", [True, False])
+def test_existing_server_must_serve_real_bunny_before_reuse(tmp_path, monkeypatch, bunny_is_served):
+    """Same-version JSON health is insufficient if the running UI is incomplete."""
+    import json
+    import threading
+    import urllib.parse
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    stop_event = threading.Event()
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+        def do_GET(self):
+            if self.path == '/api/health':
+                data = json.dumps({"ok": True, "version": version.APP_VERSION}).encode()
+                self.send_response(200);self.end_headers();self.wfile.write(data)
+            elif self.path == '/assets/hero-bunny.png':
+                self.send_response(200 if bunny_is_served else 404)
+                self.end_headers()
+                if bunny_is_served:
+                    self.wfile.write(b'\x89PNG\r\n\x1a\n')
+            elif self.path == '/api/status':
+                self.send_response(200);self.end_headers()
+                self.wfile.write(b'{"state":"ready"}')
+            else:
+                self.send_response(404);self.end_headers()
+        def do_POST(self):
+            if self.path == '/api/shutdown':
+                stop_event.set()
+                self.send_response(200);self.end_headers()
+                self.wfile.write(b'{"ok":true}')
+                threading.Thread(target=self.server.shutdown, daemon=True).start()
+            else:
+                self.send_response(404);self.end_headers()
+
+    server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+    server.daemon_threads = True
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    session = tmp_path / 'server.json'
+    session.write_text(json.dumps({"port": server.server_address[1], "key": "x"*32}), encoding='utf-8')
+    monkeypatch.setattr(launcher, 'SESSION', session)
+    try:
+        actual = launcher.valid_session()
+        if bunny_is_served:
+            assert actual and actual.startswith('http://127.0.0.1:')
+            assert not stop_event.is_set()
+        else:
+            assert actual is None
+            assert stop_event.wait(3)
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
