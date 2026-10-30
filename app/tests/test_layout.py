@@ -293,3 +293,16 @@ def test_incomplete_upgrade_cannot_replace_previous_app(work):
         install_layout.prepare()
     assert (previous / 'good.txt').read_text(encoding='utf-8') == 'working code'
     assert not (state / 'app.previous').exists()
+
+
+def test_upgrade_rejects_any_active_session_before_swapping_app(work, monkeypatch):
+    state = work / '.mochi'
+    previous = state / 'app'
+    previous.mkdir(parents=True)
+    (previous / 'active.txt').write_text('running task', encoding='utf-8')
+    monkeypatch.setattr(install_layout, '_older_app_is_busy', lambda: True)
+    with pytest.raises(RuntimeError, match='still working'):
+        install_layout.prepare()
+    assert (previous / 'active.txt').read_text(encoding='utf-8') == 'running task'
+    assert not (state / 'app.previous').exists()
+    assert not (state / 'app.next').exists()

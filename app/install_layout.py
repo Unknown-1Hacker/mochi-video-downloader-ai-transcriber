@@ -176,6 +176,9 @@ def prepare():
             _copy_our_icon()
             return
         raise RuntimeError('Mochi installation files are missing.')
+    # Never swap app files while any running job is using them.
+    if LIVE.is_dir() and _older_app_is_busy():
+        raise RuntimeError('Mochi is still working. Finish or cancel the current job before upgrading.')
     if NEXT.exists():
         shutil.rmtree(NEXT)
     # Heal an interrupted prior upgrade before attempting another one.
@@ -221,7 +224,7 @@ def _older_app_is_busy():
             with urllib.request.urlopen(urllib.request.Request(base+path,headers=head),timeout=1) as r:
                 return json.load(r)
         health=get('/api/health')
-        if health.get('version')==APP_VERSION:
+        if health.get('ok') is not True:
             return False
         return get('/api/status').get('state') in ('working','repairing')
     except (OSError,ValueError,KeyError,TypeError):
