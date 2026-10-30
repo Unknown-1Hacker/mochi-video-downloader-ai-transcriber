@@ -16,8 +16,8 @@ from urllib.parse import parse_qs, urlsplit
 
 from core import FriendlyError, UserCancelled, check_url, choices, info_for, process
 from doctor import RepairError, is_extractor_problem, repair, remember_fix, recently_failed
-
-APP_VERSION = '1.4.0'
+from guardian import save_pending, load_pending, clear_pending, redact
+from version import APP_VERSION
 from mochi_paths import root_dir, app_dir, output_dir
 ROOT = root_dir(__file__)
 STATE_DIR = ROOT / '.mochi'
@@ -29,6 +29,9 @@ class JobState:
         self.lock = threading.RLock()
         self.cancel = threading.Event()
         self.data = {'state': 'ready', 'message': 'Ready for your link ✨', 'percent': 0, 'files': [], 'folder': ''}
+        previous = load_pending(ROOT)
+        if previous:
+            self.data.update(state='interrupted', message='Your last task stopped unexpectedly. Its link is ready to try again.', pending=previous)
         self.active = False
 
     def read(self):
@@ -48,6 +51,10 @@ class JobState:
             self.active = True
             self.cancel.clear()
             self.data = {'state': 'working', 'message': 'Getting everything ready…', 'percent': 0, 'files': [], 'folder': ''}
+        try:
+            save_pending(ROOT, url, options)
+        except OSError:
+            pass  # A full or read-only disk must not prevent starting a job.
         threading.Thread(target=self._work, args=(url, options), daemon=True).start()
 
     def repair_tools(self):
@@ -110,13 +117,14 @@ class JobState:
         except FriendlyError as e:
             self.update(str(e), 0, state='error')
         except Exception as e:
-            msg = str(e).strip() or type(e).__name__
-            print(traceback.format_exc(), file=sys.stderr, flush=True)
+            msg = redact(str(e).strip() or type(e).__name__)
+            print(redact(traceback.format_exc()), file=sys.stderr, flush=True)
             hint = ('Tap Fix my tools at the top, or check .mochi/studio.log for details.'
                     if any(x in msg.lower() for x in ('metadata_errors', 'missing', 'nsig', 'javascript', 'deno'))
                     else 'See .mochi/studio.log for details, or retry.')
             self.update(f'Something went wrong: {msg[:230]}. {hint}', 0, state='error')
         finally:
+            clear_pending(ROOT)
             with self.lock:
                 self.active = False
 
@@ -129,8 +137,8 @@ class WebHandler(BaseHTTPRequestHandler):
 
     def log_message(self, fmt, *args):
         # Quiet, but retain unexpected HTTP errors in local log.
-        if args and str(args[1] if len(args) > 1 else '').startswith(('4', '5')):
-            super().log_message(fmt, *args)
+        if len(args) > 1 and str(args[1]).startswith(('4', '5')):
+            super().log_message('HTTP %s %s', args[1], self.path.split('?', 1)[0])
 
     def _json(self, code, data):
         payload = json.dumps(data, ensure_ascii=False).encode('utf-8')
@@ -257,7 +265,7 @@ class WebHandler(BaseHTTPRequestHandler):
         except (FriendlyError, ValueError, TypeError, json.JSONDecodeError) as e:
             self._json(400, {'error': str(e)})
         except (OSError, RuntimeError) as e:
-            self._json(500, {'error': f'Could not complete that action: {e}'})
+            self._json(500, {'error': f'Could not complete that action: {redact(e)}'})
 
 
 def serve():

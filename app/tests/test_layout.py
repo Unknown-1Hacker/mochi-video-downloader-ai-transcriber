@@ -125,6 +125,7 @@ def test_mac_launcher_bundle_uses_icon_and_relative_root(work,monkeypatch):
     assert sorted(p.name for p in work.iterdir() if not p.name.startswith('.'))==['Run Mochi Now.app','📖 READ ME.txt']
 
 
+@pytest.mark.skipif(os.name == 'nt', reason='Unix shell not available on Windows')
 def test_linux_launcher_shell_is_valid(work):
     install_layout.prepare()
     for sh in ['run.sh','app/bootstrap.sh']:
