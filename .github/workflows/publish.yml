@@ -77,6 +77,42 @@ jobs:
               assert not any('/tests/' in n or '/__pycache__/' in n for n in members)
           print(f'✅ One clean package: {len(files)} files')
           PY
+      - name: 🔍 Smoke test the actual release ZIP
+        run: |
+          python - <<'PY'
+          import os
+          import subprocess
+          import tempfile
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          with ZipFile('dist/Mochi.zip') as z:
+              names = set(z.namelist())
+              required = {'Mochi/Install-Mochi-Linux.sh',
+                          'Mochi/Install-Mochi-Mac.command',
+                          'Mochi/Install-Mochi-Windows.cmd',
+                          'Mochi/app/assets/hero-bunny.png'}
+              assert required <= names
+              assert not any('1 INSTALL & OPEN' in name for name in names)
+              for path in ('Mochi/Install-Mochi-Linux.sh', 'Mochi/Install-Mochi-Mac.command'):
+                  assert (z.getinfo(path).external_attr >> 16) & 0o111, path
+
+              with tempfile.TemporaryDirectory(prefix='Mochi smoke & spaces ') as tmp:
+                  z.extractall(tmp)
+                  root = Path(tmp) / 'Mochi'
+                  marker = Path(tmp) / 'started'
+                  # No network: verify the archived launcher finds its sibling
+                  # bootstrap even when the extracted folder contains spaces/&.
+                  (root / 'app' / 'bootstrap.sh').write_text(
+                      '#!/bin/sh\nprintf ready > "$MOCHI_SMOKE_MARKER"\n',
+                      encoding='utf-8')
+                  env = os.environ.copy()
+                  env['MOCHI_SMOKE_MARKER'] = str(marker)
+                  subprocess.run(
+                      ['/bin/sh', str(root / 'Install-Mochi-Linux.sh')],
+                      env=env, check=True, timeout=15)
+                  assert marker.read_text(encoding='utf-8') == 'ready'
+          PY
       - name: 💜 Write simple release notes
         run: |
           cat > dist/RELEASE.md <<'MD'
