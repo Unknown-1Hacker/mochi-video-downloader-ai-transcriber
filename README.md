@@ -2,7 +2,7 @@
 
 **One YouTube link → download the video, save audio, create subtitles, or turn speech into text.**
 
-Free to use · Windows, macOS & Linux · No account · AI transcription runs locally
+**[⬇️ Download Mochi.zip](https://github.com/Unknown-1Hacker/mochi-video-downloader-ai-transcriber/releases/latest/download/Mochi.zip)** · Free · Windows, macOS & Linux · Local AI
 
 ![Actual Mochi interface — purple header, bunny, easy video and AI transcription options](docs/mochi-interface.webp)
 
@@ -19,7 +19,7 @@ Free to use · Windows, macOS & Linux · No account · AI transcription runs loc
 
 ## 🚀 Start in three steps
 
-1. Click **Code → Download ZIP**, then extract it into a folder of your choice.
+1. **[Download Mochi.zip](https://github.com/Unknown-1Hacker/mochi-video-downloader-ai-transcriber/releases/latest/download/Mochi.zip)**, then extract it into a folder.
 2. Double-click **`1 INSTALL & OPEN`** for your OS: **Windows**, **Mac**, or **Linux**. The first run installs its own Python environment, downloader, media tools, and transcription engine; internet is needed.
 3. Paste a YouTube video link, choose what you want, and press **Make it happen ✦**.
 

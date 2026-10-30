@@ -1,0 +1,112 @@
+name: 🐰 Publish Mochi
+
+on:
+  push:
+    paths:
+      - .github/workflows/publish.yml
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version (for example, v0.2.0)
+        required: true
+        default: v0.1.0
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mochi-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 🧪 Check Mochi before release
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          python -m pip install -r app/requirements.txt pytest numpy pillow
+          python -m pytest -q
+      - name: 📦 Build one clean Mochi.zip
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
+
+          launchers = [
+              Path('1 INSTALL & OPEN - Windows.cmd'),
+              Path('1 INSTALL & OPEN - Mac.command'),
+              Path('1 INSTALL & OPEN - Linux.sh'),
+              Path('📖 READ ME.txt'),
+          ]
+          source = [p for p in Path('app').rglob('*') if p.is_file()
+                    and 'tests' not in p.parts and '__pycache__' not in p.parts
+                    and p.suffix not in ('.pyc', '.pyo')]
+          files = launchers + sorted(source)
+          assert all(p.exists() for p in files)
+          assert len(files) >= 15, 'Missing application files'
+          Path('dist').mkdir(exist_ok=True)
+          with ZipFile('dist/Mochi.zip', 'w', compression=ZIP_DEFLATED, compresslevel=9) as z:
+              for path in files:
+                  name = 'Mochi/' + path.as_posix()
+                  info = ZipInfo(name, date_time=(2026, 10, 30, 0, 0, 0))
+                  info.compress_type = ZIP_DEFLATED
+                  info.create_system = 3
+                  executable = path.suffix in ('.sh', '.command')
+                  info.external_attr = ((0o100755 if executable else 0o100644) << 16)
+                  z.writestr(info, path.read_bytes(), compress_type=ZIP_DEFLATED, compresslevel=9)
+          with ZipFile('dist/Mochi.zip') as z:
+              assert z.testzip() is None
+              members = set(z.namelist())
+              assert {'Mochi/app/studio.py', 'Mochi/app/assets/hero-bunny.png',
+                      'Mochi/1 INSTALL & OPEN - Windows.cmd',
+                      'Mochi/1 INSTALL & OPEN - Mac.command',
+                      'Mochi/1 INSTALL & OPEN - Linux.sh'} <= members
+              assert not any('/tests/' in n or '/__pycache__/' in n for n in members)
+          print(f'✅ One clean package: {len(files)} files')
+          PY
+      - name: 💜 Write simple release notes
+        run: |
+          cat > dist/RELEASE.md <<'MD'
+          ## 🐰 Meet Mochi!
+          **One YouTube link → your video, audio, subtitles, or transcript.**
+
+          🎬 **Video** · 🎧 **Audio** · 💬 **AI subtitles** · 📝 **Speech to text**
+
+          ### ✨ Get started
+          1. Download **Mochi.zip** below (not Source code).
+          2. Extract it, then double-click **1 INSTALL & OPEN** for Windows, Mac, or Linux.
+          3. Paste a link → pick what you want → **Make it happen!**
+
+          🔒 Speech recognition runs on your computer. Internet is needed for setup, AI models, and video downloads.
+
+          *First public release: some computer configurations may still need troubleshooting.*
+
+          💜 Made with love by **[1Hack](https://onehack.st/)**
+          MD
+      - name: 🚀 Publish one download
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ inputs.version || 'v0.1.0' }}
+        run: |
+          if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo 'Expected a version such as v0.1.0'
+            exit 1
+          fi
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "Release $VERSION already exists; refusing to replace it."
+            exit 1
+          fi
+          gh release create "$VERSION" \
+            'dist/Mochi.zip#🐰 Download Mochi' \
+            --title "🐰 Mochi · $VERSION" \
+            --notes-file dist/RELEASE.md \
+            --target "$GITHUB_SHA" \
+            --latest
