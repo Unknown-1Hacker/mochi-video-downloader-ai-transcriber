@@ -1,5 +1,6 @@
 """Guardian regression tests: recovery, privacy and version consistency."""
 import os
+import pytest
 from pathlib import Path
 
 import guardian
