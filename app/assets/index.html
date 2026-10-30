@@ -3,71 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#9077e9">
   <meta name="mochi-key" content="__MOCHI_KEY__">
-  <title>Mochi • a tiny video studio</title>
-  <link rel="icon" type="image/png" href="/assets/mochi.png?v=1.3.0">
-  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=1.3.0">
-  <link rel="apple-touch-icon" href="/assets/mochi.png?v=1.3.0">
-  <link rel="stylesheet" href="/assets/style.css?v=1.3.0">
+  <title>Mochi — Download videos & transcribe audio</title>
+  <link rel="icon" type="image/png" href="/assets/mochi.png?v=1.4.0">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=1.4.0">
+  <link rel="apple-touch-icon" href="/assets/mochi.png?v=1.4.0">
+  <link rel="stylesheet" href="/assets/style.css?v=1.4.0">
 </head>
 <body>
-<div class="glow glow1"></div><div class="glow glow2"></div>
-<main class="shell">
-  <header class="header">
-    <div class="brand"><span class="logo" aria-hidden="true"><span class="ear e1"></span><span class="ear e2"></span><span class="face"><i class="eye left"></i><i class="eye right"></i><i class="mouth"></i></span></span><span>Mochi<span class="brand-dot">.</span></span></div>
-    <div class="header-actions"><button id="repair" class="repair repair-top" type="button" title="Check and repair Mochi’s download and AI tools">🛠 Fix my tools</button><div class="topnote"><span class="privacy-dot"></span> Private on your computer</div></div>
+<div class="app-frame">
+  <header class="topbar">
+    <a class="identity" href="#home" aria-label="Mochi home">
+      <span class="app-symbol"><img src="/assets/mochi.png" alt="" width="56" height="56"></span>
+      <span class="identity-text"><strong>Mochi <span class="sparkle">✦</span></strong><small>Video Downloader &amp; AI Transcriber</small></span>
+    </a>
+    <nav class="top-actions" aria-label="Quick actions">
+      <button class="top-action" data-open-downloads type="button" title="Open saved downloads">📂 <span>Downloads</span></button>
+      <button id="repair" class="top-action top-repair" type="button" title="Check and repair download and AI tools">🛠 <span>Fix my tools</span></button>
+      <button class="top-action top-settings" data-go-settings type="button" title="Jump to quality and language">⚙ <span>Settings</span></button>
+    </nav>
   </header>
-  <section class="intro">
-    <div class="eyebrow">✦ Your cozy little video studio</div>
-    <h1>Any video, <span>your way.</span> <span class="twinkle">✳</span></h1>
-    <p>Paste a YouTube link. Pick what you want. We'll handle the rest. <span class="heart">♥</span></p>
-  </section>
-  <section class="panel" aria-labelledby="input-title">
-    <div class="section-title"><span class="number">01</span><h2 id="input-title">Drop your link here</h2></div>
-    <div class="input-row">
-      <span class="link-icon" aria-hidden="true">↗</span>
-      <input id="url" type="url" inputmode="url" placeholder="https://youtube.com/watch?v=..." autocomplete="off" spellcheck="false" aria-label="YouTube video link" />
-      <button id="paste" class="paste" type="button">📋 Paste</button>
-    </div>
-    <p class="hint">YouTube and youtu.be links · One video at a time</p>
-    <div class="divider"></div>
-    <div class="section-title"><span class="number">02</span><h2>What would you like?</h2></div>
-    <div class="choices" role="radiogroup" aria-label="Download type">
-      <label class="choice is-selected"><input type="radio" name="mode" value="video" checked><span class="emoji">🎬</span><span class="choice-label">Full video</span><span class="choice-desc">Picture + sound</span><span class="check">✓</span></label>
-      <label class="choice"><input type="radio" name="mode" value="audio"><span class="emoji">🎧</span><span class="choice-label">Audio only</span><span class="choice-desc">Just listen</span><span class="check">✓</span></label>
-      <label class="choice"><input type="radio" name="mode" value="subtitles"><span class="emoji">💬</span><span class="choice-label">Subtitles</span><span class="choice-desc">AI listens to audio</span><span class="check">✓</span></label>
-      <label class="choice"><input type="radio" name="mode" value="transcript"><span class="emoji">📝</span><span class="choice-label">Transcript</span><span class="choice-desc">Spoken words as text</span><span class="check">✓</span></label>
-    </div>
-    <div class="divider"></div>
-    <div class="section-title"><span class="number">03</span><h2>A little finishing touch</h2></div>
-    <div id="video-options" class="options-row">
-      <div class="opt-copy"><span>📺 Video quality</span><small>Highest available is selected for you</small></div>
-      <div class="select-row"><select id="height" aria-label="Video quality"><option value="best">✨ Highest available</option></select><button id="find-qualities" type="button" class="subtle-btn">See options</button></div>
-    </div>
-    <div id="audio-options" class="options-row hidden">
-      <div class="opt-copy"><span>🎵 Sound format</span><small>Original skips conversion for speed</small></div>
-      <select id="audio-format"><option value="original">⚡ Original · fastest</option><option value="mp3">🎵 MP3 · works everywhere</option></select>
-    </div>
-    <div id="speech-options" class="options-row hidden">
-      <div class="opt-copy"><span>🧠 AI accuracy</span><small>Made from original audio, never copied captions</small></div>
-      <select id="speech-quality"><option value="balanced">⚡ Balanced · faster</option><option value="accurate">🎯 Careful · more accurate</option></select>
-    </div>
-    <div id="language-options" class="options-row hidden second-option">
-      <div class="opt-copy"><span>🌍 Spoken language</span><small>Automatic usually gets it right</small></div>
-      <select id="language"><option value="auto">✨ Detect automatically</option><option value="en">English</option><option value="hi">Hindi</option><option value="ta">Tamil</option><option value="es">Spanish</option><option value="fr">French</option><option value="de">German</option><option value="ar">Arabic</option><option value="ja">Japanese</option></select>
-    </div>
-    <div class="actionline"><button id="start" class="start" type="button">Make it happen <span aria-hidden="true">✦</span></button><span class="safe-note">🔒 No account needed</span></div>
-  </section>
-  <section id="activity" class="activity hidden" aria-live="polite" aria-atomic="false">
-    <div class="status-top"><div class="status-title"><span class="small-bunny">✦</span><strong id="status-heading">Working on your video</strong></div><span id="percent">0%</span></div>
-    <div class="progress-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="progress"><div id="progress-fill"></div></div>
-    <p id="status-text" class="status-text">Getting ready…</p>
-    <div id="results" class="results hidden"><div id="file-list" class="file-list"></div><button id="open-folder" type="button" class="folder">📂 Open my saved files</button></div>
-    <button id="cancel" class="cancel" type="button">Cancel this job</button>
-    <button id="again" class="again hidden" type="button">✦ Make another</button>
-  </section>
-  <footer><span class="foot-sparkle">✺</span><span>Download locally. Keep forever.</span><span>Made with <span class="love">♥</span> by <a href="https://onehack.st/" target="_blank" rel="noopener noreferrer">1Hack</a></span></footer>
-</main>
-<script src="/assets/app.js?v=1.3.0" defer></script>
+  <div class="app-body" id="home">
+    <aside class="sidebar" aria-label="Navigation">
+      <button class="side-link active" data-go-home type="button"><span class="side-emoji">🏠</span><span><strong>Home</strong><small>Paste link and start</small></span></button>
+      <div class="side-modes">
+        <button class="side-link" data-choose-mode="video" type="button"><span class="side-emoji">🎬</span><span><strong>Full video</strong><small>Picture + sound</small></span></button>
+        <button class="side-link" data-choose-mode="audio" type="button"><span class="side-emoji">🎧</span><span><strong>Audio only</strong><small>Just listen</small></span></button>
+        <button class="side-link" data-choose-mode="subtitles" type="button"><span class="side-emoji">💬</span><span><strong>Subtitles</strong><small>AI listens to audio</small></span></button>
+        <button class="side-link" data-choose-mode="transcript" type="button"><span class="side-emoji">📝</span><span><strong>Transcript</strong><small>Spoken words as text</small></span></button>
+      </div>
+      <div class="side-divider"></div>
+      <button class="side-link" data-go-settings type="button"><span class="side-emoji">⚙️</span><span><strong>Settings</strong><small>Quality and language</small></span></button>
+      <button class="side-link" data-open-downloads type="button"><span class="side-emoji">📁</span><span><strong>Downloads</strong><small>Open saved files</small></span></button>
+      <button class="side-link" data-repair type="button"><span class="side-emoji">🛠️</span><span><strong>Fix my tools</strong><small>Check and repair</small></span></button>
+    </aside>
+    <main class="main-content">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-bunny" aria-hidden="true">
+          <svg viewBox="0 0 210 170" width="210" height="170" role="presentation">
+            <g stroke="#6550c0" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+              <path d="M104 48 C87 13 82 1 67 6 C51 13 69 53 77 75 C55 83 45 112 57 134 C67 154 135 161 156 137 C169 120 162 92 141 80 C170 55 166 33 151 30 C137 29 122 46 113 57" fill="#fffefa"/>
+              <path d="M80 68 C66 44 59 21 69 20 C77 20 93 54 93 59" fill="#ffddea" stroke="none"/>
+              <path d="M134 65 C148 45 156 38 158 42 C159 52 144 73 137 76" fill="#ffddea" stroke="none"/>
+              <path d="M84 102 q10 -13 20 0 M120 103 q10 -13 20 0" fill="none"/>
+              <path d="M103 120 q8 9 15 0 q7 9 15 -1" fill="none"/>
+              <ellipse cx="77" cy="118" rx="11" ry="7" fill="#ffd7e9" stroke="none"/>
+              <ellipse cx="146" cy="118" rx="11" ry="7" fill="#ffd7e9" stroke="none"/>
+              <path d="M67 136 q-26 0 -24 20 q9 18 33 5 q9 -14 -9 -25z M148 138 q21 -9 28 5 q7 19 -22 22 q-19 -4 -6 -27z" fill="#fffefa"/>
+            </g>
+            <path d="M20 55 l5 -9 l5 9 l10 5 l-10 5 l-5 9 l-5 -9 l-10 -5z M178 31 l3 -7 l4 7 l7 4 l-7 3 l-4 8 l-3 -8 l-8 -3z" fill="#af92f7"/>
+          </svg>
+        </div>
+        <div><h1 id="hero-title">Paste your YouTube link <span>✦</span></h1><p>One link. Your choice. Done!</p></div>
+      </section>
+      <section class="link-panel" aria-label="YouTube link">
+        <div class="link-input-wrap"><span class="link-glyph" aria-hidden="true">🔗</span><input id="url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://www.youtube.com/watch?v=..." aria-label="YouTube video URL"></div>
+        <button id="paste" class="paste" type="button">📋 Paste</button>
+        <p class="link-hint">▶️ YouTube or youtu.be · One video at a time</p>
+      </section>
+      <section class="content-card mode-panel" id="choose" aria-labelledby="choose-title">
+        <h2 id="choose-title">What would you like?</h2>
+        <div class="choices" role="radiogroup" aria-label="Download type">
+          <label class="choice is-selected"><input type="radio" name="mode" value="video" checked><span class="emoji">🎬</span><span class="choice-label">Full video</span><span class="choice-desc">Picture + sound</span><span class="check" aria-hidden="true">✓</span></label>
+          <label class="choice"><input type="radio" name="mode" value="audio"><span class="emoji">🎧</span><span class="choice-label">Audio only</span><span class="choice-desc">Just listen</span><span class="check" aria-hidden="true">✓</span></label>
+          <label class="choice"><input type="radio" name="mode" value="subtitles"><span class="emoji">💬</span><span class="choice-label">Subtitles</span><span class="choice-desc">AI listens to audio</span><span class="check" aria-hidden="true">✓</span></label>
+          <label class="choice"><input type="radio" name="mode" value="transcript"><span class="emoji">📝</span><span class="choice-label">Transcript</span><span class="choice-desc">Spoken words as text</span><span class="check" aria-hidden="true">✓</span></label>
+        </div>
+      </section>
+      <section class="content-card finish-panel" id="finishing" aria-labelledby="finish-title">
+        <h2 id="finish-title">A little finishing touch</h2>
+        <div id="video-options" class="options-row"><div class="opt-copy"><strong>📺 Video quality</strong><small>Highest available is selected for you</small></div><div class="select-row"><select id="height" aria-label="Video quality"><option value="best">✨ Highest available</option></select><button id="find-qualities" type="button" class="subtle-btn">See options</button></div></div>
+        <div id="audio-options" class="options-row hidden"><div class="opt-copy"><strong>🎵 Sound format</strong><small>Original skips conversion for speed</small></div><select id="audio-format" aria-label="Audio format"><option value="original">⚡ Original · fastest</option><option value="mp3">🎵 MP3 · works everywhere</option></select></div>
+        <div id="speech-options" class="options-row hidden"><div class="opt-copy"><strong>🧠 AI accuracy</strong><small>Made from original audio, never copied captions</small></div><select id="speech-quality" aria-label="AI transcription accuracy"><option value="balanced">⚡ Balanced · faster</option><option value="accurate">🎯 Careful · more accurate</option></select></div>
+        <div id="language-options" class="options-row hidden second-option"><div class="opt-copy"><strong>🌍 Spoken language</strong><small>Automatic usually gets it right</small></div><select id="language" aria-label="Spoken language"><option value="auto">✨ Detect automatically</option><option value="en">English</option><option value="hi">Hindi</option><option value="ta">Tamil</option><option value="es">Spanish</option><option value="fr">French</option><option value="de">German</option><option value="ar">Arabic</option><option value="ja">Japanese</option></select></div>
+      </section>
+      <div class="actionline"><button id="start" class="start" type="button">✦ Make it happen ✦</button><span class="safe-note">🔒 No account needed</span></div>
+      <section id="activity" class="activity hidden" aria-live="polite" aria-atomic="false"><div class="status-top"><div class="status-title"><span class="small-bunny">✦</span><strong id="status-heading">Working on your video</strong></div><span id="percent">0%</span></div><div class="progress-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="progress"><div id="progress-fill"></div></div><p id="status-text" class="status-text">Getting ready…</p><div id="results" class="results hidden"><div id="file-list" class="file-list"></div><button id="open-folder" type="button" class="folder">📂 Open my saved files</button></div><button id="cancel" class="cancel" type="button">Cancel this job</button><button id="again" class="again hidden" type="button">✦ Make another</button></section>
+    </main>
+  </div>
+  <footer class="footer"><span>💗 Made with love by 1Hack — <a href="https://onehack.st/" target="_blank" rel="noopener noreferrer">OneHack.st</a></span><span>🔒 AI transcription runs on your computer</span></footer>
+</div>
+<script src="/assets/app.js?v=1.4.0" defer></script>
 </body>
 </html>

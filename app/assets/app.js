@@ -20,6 +20,23 @@ function selectedMode(){
   el('language-options').classList.toggle('hidden',!speech);
 }
 document.querySelectorAll('[name="mode"]').forEach(node=>node.addEventListener('change',selectedMode));
+// Sidebar and header are real shortcuts into the same simple workflow.
+document.querySelectorAll('[data-choose-mode]').forEach(button=>button.addEventListener('click',()=>{
+  const radio=document.querySelector(`input[name="mode"][value="${button.dataset.chooseMode}"]`);
+  if(!radio)return;
+  radio.checked=true;selectedMode();
+  el('choose').scrollIntoView({behavior:'smooth',block:'center'});
+}));
+document.querySelectorAll('[data-go-settings]').forEach(button=>button.addEventListener('click',()=>{
+  el('finishing').scrollIntoView({behavior:'smooth',block:'center'});
+}));
+document.querySelectorAll('[data-go-home]').forEach(button=>button.addEventListener('click',()=>{
+  el('home').scrollIntoView({behavior:'smooth',block:'start'});el('url').focus({preventScroll:true});
+}));
+document.querySelectorAll('[data-repair]').forEach(button=>button.addEventListener('click',()=>el('repair').click()));
+document.querySelectorAll('[data-open-downloads]').forEach(button=>button.addEventListener('click',async()=>{
+  try{await api('/api/open-downloads',{})}catch(e){note(e.message)}
+}));
 el('paste').addEventListener('click',async()=>{
   try{el('url').value=(await navigator.clipboard.readText()).trim();el('url').focus()}catch(e){el('url').focus();note('Paste using Ctrl+V (or Cmd+V) in the link box.','error')}
 });

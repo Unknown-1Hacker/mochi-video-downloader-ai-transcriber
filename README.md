@@ -4,7 +4,7 @@
 
 Free to use · Windows, macOS & Linux · No account · AI transcription runs locally
 
-![Mochi's simple video download and transcription interface](docs/mochi-interface.png)
+![Actual Mochi interface — purple header, bunny, easy video and AI transcription options](docs/mochi-interface.webp)
 
 ## ✨ What can Mochi do?
 

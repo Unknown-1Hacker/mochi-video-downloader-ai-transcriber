@@ -145,3 +145,31 @@ def test_real_favicon_served(server):
     with request(base,'/assets/mochi.png') as resp:
         assert resp.headers['Content-Type']=='image/png'
         assert resp.read()[:8]==b'\x89PNG\r\n\x1a\n'
+
+
+def test_downloads_button_opens_folder_even_before_first_job(server, monkeypatch):
+    base, token, root = server
+    calls = []
+    monkeypatch.setattr(studio.subprocess, 'Popen', lambda args: calls.append(args))
+    with request(base, '/api/open-downloads', token, {}) as resp:
+        assert json.loads(resp.read())['ok']
+    assert (root / 'My Downloads').is_dir()
+    assert calls == [['xdg-open', str((root / 'My Downloads').resolve())]]
+
+
+def test_downloads_button_rejects_unauthorized_calls(server):
+    base, token, root = server
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        request(base, '/api/open-downloads', None, {})
+    assert exc.value.code == 403
+
+
+def test_new_ui_uses_real_controls(server):
+    base, token, _ = server
+    with request(base, '/?key=' + token) as resp:
+        page = resp.read().decode()
+    assert 'Paste your YouTube link' in page
+    assert 'class="sidebar"' in page
+    assert 'data-choose-mode="transcript"' in page
+    assert 'data-open-downloads' in page
+    assert page.count('id="repair"') == 1

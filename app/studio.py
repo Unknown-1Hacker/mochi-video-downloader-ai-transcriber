@@ -17,7 +17,7 @@ from urllib.parse import parse_qs, urlsplit
 from core import FriendlyError, UserCancelled, check_url, choices, info_for, process
 from doctor import RepairError, is_extractor_problem, repair, remember_fix, recently_failed
 
-APP_VERSION = '1.3.0'
+APP_VERSION = '1.4.0'
 from mochi_paths import root_dir, app_dir, output_dir
 ROOT = root_dir(__file__)
 STATE_DIR = ROOT / '.mochi'
@@ -229,12 +229,16 @@ class WebHandler(BaseHTTPRequestHandler):
             elif self.path == '/api/repair':
                 JOB.repair_tools()
                 self._json(200, {'ok': True})
-            elif self.path == '/api/open':
-                if JOB.read().get('state') != 'done':
-                    raise FriendlyError('No completed files to open yet.')
-                target = Path(JOB.read()['folder']).resolve()
-                if not target.is_dir() or not target.is_relative_to(OUTPUT_DIR.resolve()):
-                    raise FriendlyError('Saved folder could not be found.')
+            elif self.path in ('/api/open', '/api/open-downloads'):
+                if self.path == '/api/open':
+                    if JOB.read().get('state') != 'done':
+                        raise FriendlyError('No completed files to open yet.')
+                    target = Path(JOB.read()['folder']).resolve()
+                    if not target.is_dir() or not target.is_relative_to(OUTPUT_DIR.resolve()):
+                        raise FriendlyError('Saved folder could not be found.')
+                else:
+                    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+                    target = OUTPUT_DIR.resolve()
                 if os.name == 'nt':
                     os.startfile(str(target))
                 elif sys.platform == 'darwin':
