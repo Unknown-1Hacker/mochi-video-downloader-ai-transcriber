@@ -26,6 +26,28 @@
 | 💬 **Subtitles** | AI-generated SRT + VTT with timestamps |
 | 📝 **Transcript** | Spoken words in a TXT file |
 
+### 🧭 How Mochi works
+
+<p align="center">
+  <strong>🖱️ Open Mochi</strong><br/>
+  <sub>Checks its tools and prepares what's missing</sub><br/><br/>
+  ⬇️<br/><br/>
+  <strong>🔗 Paste a YouTube link → 🎯 Pick what you want</strong><br/>
+  <sub>Best available quality by default, or choose your own</sub><br/><br/>
+  ⬇️
+</p>
+
+| 🎬 Video / 🎧 Audio | 💬 Subtitles / 📝 Transcript |
+|:---:|:---:|
+| **📥 [yt-dlp](https://github.com/yt-dlp/yt-dlp)** | **📥 yt-dlp → 🧠 [faster-whisper](https://github.com/SYSTRAN/faster-whisper)** |
+| Downloads your selected media and quality | Downloads the original audio, then listens to the speech locally—not existing captions |
+| **💾 Video or audio file** | **💾 SRT + VTT subtitles or TXT text** |
+
+<p align="center">
+  <strong>✅ Saved on your computer</strong><br/>
+  <sub>⚡ Smart defaults · ♻️ Reuses completed work · 🛠️ Repairs known issues · 🧹 Keeps things tidy</sub>
+</p>
+
 ### 🚀 Three steps. That's it.
 
 1. **[Download Mochi.zip](https://github.com/Unknown-1Hacker/mochi-video-downloader-ai-transcriber/releases/latest/download/Mochi.zip)** and extract it.
@@ -35,10 +57,6 @@
 💜 Next time, just open **Run Mochi Now**. Your downloads stay on your computer.
 
 > 💡 First setup needs internet. Your system might ask you to approve the launcher; keep its security protections enabled.
-
-### 🧠 AI that listens to the audio
-
-Mochi uses [faster-whisper](https://github.com/SYSTRAN/faster-whisper) on your computer—not YouTube's existing captions—to make subtitles and transcripts. Video downloads use [yt-dlp](https://github.com/yt-dlp/yt-dlp).
 
 **🛠️ Something stuck?** Open Mochi → **Fix my tools**. It can repair recognized problems without deleting your downloads.
 
