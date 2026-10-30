@@ -69,3 +69,37 @@ def test_installer_prefers_release_lockfile():
     powershell = (source / "bootstrap.ps1").read_text()
     assert "requirements.lock" in shell and "requirements.lock" in powershell
     assert "requirements.txt" in shell and "requirements.txt" in powershell
+
+
+def test_downloader_rollback_is_bounded(tmp_path, monkeypatch):
+    import doctor
+    import types
+    calls = []
+    monkeypatch.setattr(doctor, "_uv", lambda root: "uv")
+    def fake_run(args, **kwargs):
+        calls.append(args)
+        return types.SimpleNamespace(returncode=0)
+    monkeypatch.setattr(doctor.subprocess, "run", fake_run)
+    assert doctor.restore_downloader(tmp_path, "2026.10.26")
+    assert len(calls) == 1 and "--reinstall-package" in calls[0]
+    assert "yt-dlp[default]==2026.10.26" in calls[0]
+    assert not doctor.restore_downloader(tmp_path, "latest; do-something")
+    assert len(calls) == 1
+
+
+def test_manual_repair_prefers_release_lock(tmp_path, monkeypatch):
+    import doctor
+    import types
+    app = tmp_path / "app"
+    app.mkdir()
+    (app / "requirements.txt").write_text("av<19\n")
+    lock = app / "requirements.lock"
+    lock.write_text("av==18.1.0\n")
+    calls = []
+    monkeypatch.setattr(doctor, "_uv", lambda root: "uv")
+    monkeypatch.setattr(doctor.subprocess, "run", lambda args, **kwargs: (calls.append(args) or types.SimpleNamespace(returncode=0)))
+    monkeypatch.setattr(doctor, "inspect", lambda root: {})
+    import core
+    monkeypatch.setattr(core, "ensure_ffmpeg", lambda root: str(root))
+    doctor.repair(tmp_path, lambda *x: None)
+    assert calls[0][-1] == str(lock)
