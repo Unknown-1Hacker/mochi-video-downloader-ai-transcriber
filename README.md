@@ -56,6 +56,8 @@
 
 💜 Next time, just open **Run Mochi Now**. Your downloads stay on your computer.
 
+> 🐧 On Linux, if the shortcut won't launch, right-click **Run Mochi Now.desktop → Allow Launching**. Or open a terminal in the Mochi folder and run `sh .mochi/run.sh`. Keep the `.mochi` folder when upgrading.
+
 > 💡 First setup needs internet. Your OS might ask you to approve the launcher; keep its security protections enabled. **Linux opens the file as text?** Open a terminal inside the extracted Mochi folder and run `sh ./Install-Mochi-Linux.sh`.
 
 **🛠️ Something stuck?** Open Mochi → **Fix my tools**. It can repair recognized problems without deleting your downloads.
