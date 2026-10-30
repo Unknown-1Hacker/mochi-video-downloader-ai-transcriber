@@ -80,10 +80,13 @@ def ensure_ffmpeg(root: Path) -> str:
         # Broken tool files are regenerated below, without touching user downloads.
         ffmpeg.unlink(missing_ok=True)
         ffprobe.unlink(missing_ok=True)
-    sources = None
+    # Prefer healthy system media tools before fetching a new binary.
+    native_ffmpeg, native_probe = shutil.which('ffmpeg'), shutil.which('ffprobe')
+    sources = (native_ffmpeg, native_probe) if native_ffmpeg and native_probe else None
     try:
-        from static_ffmpeg import run
-        sources = run.get_or_fetch_platform_executables_else_raise()
+        if not sources:
+            from static_ffmpeg import run
+            sources = run.get_or_fetch_platform_executables_else_raise()
     except Exception:
         # Fall back to bundled imageio FFmpeg plus an already-installed ffprobe.
         try:
