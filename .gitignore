@@ -1,0 +1,22 @@
+# Mochi generated files and private user data
+.mochi/
+My Downloads/
+Downloads/
+*.log
+*.part
+*.ytdl
+*.tmp
+
+# Python / build tools
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/

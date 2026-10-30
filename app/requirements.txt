@@ -1,0 +1,7 @@
+# Known working pairing: faster-whisper 1.2.1 calls PyAV metadata_errors,
+# which PyAV 19 removed. This prevents the Oct 2026 crash.
+yt-dlp[default]>=2025.9.0
+faster-whisper>=1.1,<1.3
+av>=16,<19
+imageio-ffmpeg>=0.5.0
+static-ffmpeg>=3.0
