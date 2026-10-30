@@ -77,8 +77,11 @@ def repair(root: Path, update, *, only_downloader: bool = False, cancelled=None)
     report_before = inspect(root)
     log = root / '.mochi' / 'repair.log'
     log.parent.mkdir(parents=True, exist_ok=True)
+    requirements = app_dir(root) / 'requirements.lock'
+    if not requirements.exists():
+        requirements = app_dir(root) / 'requirements.txt'
     command = [uv, 'pip', 'install', '--python', sys.executable,
-               '--upgrade-package', 'yt-dlp', '-r', str(app_dir(root) / 'requirements.txt')]
+               '-r', str(requirements)]
     if only_downloader:
         command = [uv, 'pip', 'install', '--python', sys.executable, '--upgrade', 'yt-dlp[default]']
     update('Repairing known dependencies safely…', 35)
@@ -141,4 +144,25 @@ def recently_failed(root: Path, kind: str, method: str, within_seconds: int = 36
         last = matching[-1]
         return bool(last.get('success') is False and 0 <= time.time() - float(last.get('time', 0)) <= within_seconds)
     except (OSError, ValueError, TypeError):
+        return False
+
+
+def restore_downloader(root: Path, previous_version: str) -> bool:
+    """Best-effort rollback after a failed extractor update. Never touches media."""
+    import re
+    if not isinstance(previous_version, str) or not re.fullmatch(r"[0-9][0-9A-Za-z.+!-]{0,60}", previous_version):
+        return False
+    try:
+        uv = _uv(root)
+        log = Path(root) / ".mochi" / "repair.log"
+        log.parent.mkdir(parents=True, exist_ok=True)
+        with log.open("a", encoding="utf-8") as out:
+            out.write("\n--- Restoring previous downloader ---\n")
+            p = subprocess.run(
+                [uv, "pip", "install", "--python", sys.executable,
+                 "--reinstall-package", "yt-dlp", f"yt-dlp[default]=={previous_version}"],
+                stdout=out, stderr=subprocess.STDOUT,
+                stdin=subprocess.DEVNULL, timeout=180, check=False)
+        return p.returncode == 0
+    except (OSError, subprocess.TimeoutExpired, RepairError):
         return False

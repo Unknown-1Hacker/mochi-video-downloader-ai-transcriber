@@ -61,3 +61,11 @@ def test_existing_downloads_never_touched(tmp_path):
     guardian.save_pending(tmp_path, URL, {"mode": "video"})
     guardian.clear_pending(tmp_path)
     assert original.read_bytes() == b"keep this forever"
+
+
+def test_installer_prefers_release_lockfile():
+    source = Path(studio.__file__).parent
+    shell = (source / "bootstrap.sh").read_text()
+    powershell = (source / "bootstrap.ps1").read_text()
+    assert "requirements.lock" in shell and "requirements.lock" in powershell
+    assert "requirements.txt" in shell and "requirements.txt" in powershell

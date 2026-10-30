@@ -394,6 +394,10 @@ def recognize(media: Path, out: Path, quality: str, language: str | None, subtit
         # memmap must release its backing file before Windows allows deletion.
         if decoded_dir is not None:
             if not isinstance(source, str):
+                # Windows cannot delete the PCM temp file until numpy releases its mmap.
+                mapped = getattr(source, '_mmap', None)
+                if mapped is not None:
+                    mapped.close()
                 del source
             shutil.rmtree(decoded_dir, ignore_errors=True)
 

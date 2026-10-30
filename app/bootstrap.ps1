@@ -28,7 +28,9 @@ try {
     Write-Host '[1/4] Preparing private Python and video tools...'
     & $Uv venv --python 3.12 (Join-Path $State 'venv')
     if ($LASTEXITCODE -ne 0) { throw 'Python setup failed.' }
-    & $Uv pip install --upgrade --python $Py -r (Join-Path $Here 'requirements.txt')
+    $Req = Join-Path $Here 'requirements.lock'
+    if (-not (Test-Path $Req)) { $Req = Join-Path $Here 'requirements.txt' }
+    & $Uv pip install --python $Py -r $Req
     if ($LASTEXITCODE -ne 0) { throw 'Python packages could not install.' }
     Write-Host '[2/4] Preparing audio and video tools...'
     & $Py (Join-Path $Here 'setup_ffmpeg.py')

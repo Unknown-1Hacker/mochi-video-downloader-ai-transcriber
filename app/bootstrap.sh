@@ -26,7 +26,9 @@ fi
 printf '[2/5] Preparing private Python…\n'
 "$UV" venv --python 3.12 "$STATE/venv"
 printf '[3/5] Preparing video and AI tools…\n'
-"$UV" pip install --upgrade --python "$PY" -r "$HERE/requirements.txt"
+REQ="$HERE/requirements.lock"
+[ -f "$REQ" ] || REQ="$HERE/requirements.txt"
+"$UV" pip install --python "$PY" -r "$REQ"
 printf '[4/5] Preparing media tools…\n'
 "$PY" "$HERE/setup_ffmpeg.py"
 if [ ! -x "$STATE/deno/bin/deno" ] && ! command -v deno >/dev/null 2>&1; then

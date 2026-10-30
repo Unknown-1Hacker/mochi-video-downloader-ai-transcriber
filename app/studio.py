@@ -15,7 +15,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from core import FriendlyError, UserCancelled, check_url, choices, info_for, process
-from doctor import RepairError, is_extractor_problem, repair, remember_fix, recently_failed
+from doctor import RepairError, is_extractor_problem, repair, remember_fix, recently_failed, restore_downloader, _version
 from guardian import save_pending, load_pending, clear_pending, redact
 from version import APP_VERSION
 from mochi_paths import root_dir, app_dir, output_dir
@@ -91,6 +91,7 @@ class JobState:
                 if (self.cancel.is_set() or not is_extractor_problem(first)
                         or recently_failed(ROOT, 'extractor', 'update_downloader')):
                     raise
+                old_downloader = _version('yt-dlp')
                 self.update('YouTube changed something. Checking the downloader once…', 10)
                 try:
                     repair(ROOT, self.update, only_downloader=True, cancelled=self.cancel)
@@ -108,6 +109,9 @@ class JobState:
                     files = process(url, ROOT, OUTPUT_DIR, options, self.update, self.cancel)
                 except Exception:
                     remember_fix(ROOT, 'extractor', 'update_downloader', False)
+                    if old_downloader and _version('yt-dlp') != old_downloader:
+                        if restore_downloader(ROOT, old_downloader):
+                            self.update('Kept your previous downloader after a failed update.', 0)
                     raise
                 remember_fix(ROOT, 'extractor', 'update_downloader', True)
             folder = str(files[0].parent)
