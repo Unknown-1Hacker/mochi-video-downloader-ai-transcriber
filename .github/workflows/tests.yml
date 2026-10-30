@@ -33,5 +33,10 @@ jobs:
         run: python -m pip install -r app/requirements.txt pytest numpy pillow
       - name: Test Mochi
         run: python -m pytest -q
+      - name: Check universal dependency resolution
+        if: runner.os == 'Linux'
+        run: |
+          python -m pip install uv
+          uv pip compile --universal --python-version 3.12 app/requirements.txt -o /tmp/requirements.lock
       - name: Compile source
         run: python -m compileall -q app

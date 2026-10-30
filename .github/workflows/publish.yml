@@ -2,6 +2,7 @@ name: 🐰 Publish Mochi
 
 on:
   push:
+    branches: [main]
     paths:
       - .github/workflows/publish.yml
   workflow_dispatch:
@@ -9,7 +10,7 @@ on:
       version:
         description: Release version (for example, v0.2.0)
         required: true
-        default: v0.1.0
+        default: v0.2.0
         type: string
 
 permissions:
@@ -33,6 +34,10 @@ jobs:
           sudo apt-get install -y ffmpeg
           python -m pip install -r app/requirements.txt pytest numpy pillow
           python -m pytest -q
+      - name: 🔒 Resolve one portable dependency set
+        run: |
+          python -m pip install uv
+          uv pip compile --universal --python-version 3.12 app/requirements.txt -o app/requirements.lock
       - name: 📦 Build one clean Mochi.zip
         run: |
           python - <<'PY'
@@ -64,7 +69,8 @@ jobs:
           with ZipFile('dist/Mochi.zip') as z:
               assert z.testzip() is None
               members = set(z.namelist())
-              assert {'Mochi/app/studio.py', 'Mochi/app/assets/hero-bunny.png',
+              assert {'Mochi/app/studio.py', 'Mochi/app/version.py', 'Mochi/app/guardian.py',
+                  'Mochi/app/requirements.lock', 'Mochi/app/assets/hero-bunny.png',
                       'Mochi/1 INSTALL & OPEN - Windows.cmd',
                       'Mochi/1 INSTALL & OPEN - Mac.command',
                       'Mochi/1 INSTALL & OPEN - Linux.sh'} <= members
@@ -94,7 +100,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          VERSION: ${{ inputs.version || 'v0.1.0' }}
+          VERSION: ${{ inputs.version || 'v0.2.0' }}
         run: |
           if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo 'Expected a version such as v0.1.0'
