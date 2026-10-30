@@ -128,7 +128,7 @@ def test_broken_ffmpeg_is_repaired(tmp_path,monkeypatch):
 
 
 def test_repair_respects_cancel_before_changes(tmp_path,monkeypatch):
-    uv=tmp_path/'.mochi'/'tools'/'uv';uv.parent.mkdir(parents=True);uv.write_bytes(b'tool')
+    uv=tmp_path/'.mochi'/'tools'/('uv.exe' if os.name=='nt' else 'uv');uv.parent.mkdir(parents=True);uv.write_bytes(b'tool')
     cancelled=threading.Event();cancelled.set()
     with pytest.raises(doctor.RepairError,match='cancelled'):
         doctor.repair(tmp_path,lambda *x:None,cancelled=cancelled)
