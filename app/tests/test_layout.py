@@ -282,6 +282,8 @@ def test_postinstall_launcher_reports_errors_and_logs(work, monkeypatch):
                             cwd=work, capture_output=True, text=True, timeout=15)
     assert result.returncode == 7
     assert (state / 'launch.log').exists()
+    assert 'osascript' not in (state / 'run.sh').read_text(encoding='utf-8')
+    assert 'zenity --error' not in (state / 'run.sh').read_text(encoding='utf-8')
 
 
 def test_incomplete_upgrade_cannot_replace_previous_app(work):

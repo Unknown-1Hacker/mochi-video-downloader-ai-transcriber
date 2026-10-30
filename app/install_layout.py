@@ -77,12 +77,8 @@ else
   CODE=$?
 fi
 if [ "$CODE" -ne 0 ]; then
-  if command -v zenity >/dev/null 2>&1; then
-    zenity --error --title='Mochi needs help' --text='Could not open Mochi. See .mochi/launch.log or run setup again.' 2>/dev/null || true
-  elif command -v notify-send >/dev/null 2>&1; then
-    notify-send 'Mochi needs help' 'See .mochi/launch.log or run setup again' || true
-  elif command -v osascript >/dev/null 2>&1; then
-    osascript -e 'display alert "Mochi needs help" message "See .mochi/launch.log"' >/dev/null 2>&1 || true
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send 'Mochi needs help' 'Open .mochi/launch.log or run setup again' >/dev/null 2>&1 || true
   fi
 fi
 exit "$CODE"
