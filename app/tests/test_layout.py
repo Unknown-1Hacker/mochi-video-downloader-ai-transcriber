@@ -306,3 +306,29 @@ def test_upgrade_rejects_any_active_session_before_swapping_app(work, monkeypatc
     assert (previous / 'active.txt').read_text(encoding='utf-8') == 'running task'
     assert not (state / 'app.previous').exists()
     assert not (state / 'app.next').exists()
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='macOS app wrapper is a POSIX script')
+def test_installed_mac_app_executes_private_launcher(work, monkeypatch):
+    monkeypatch.setattr(install_layout.sys, 'platform', 'darwin')
+    install_layout.prepare()
+    install_layout.finish()
+    state = work / '.mochi'
+    exe = state / 'venv' / 'bin' / 'python'
+    exe.parent.mkdir(parents=True)
+    exe.write_text('#!/bin/sh\nif [ "$1" = "-c" ]; then exit 0; fi\n'
+                   'printf "%s\\n" "$1" > "$MOCHI_TEST_MARKER"\n',
+                   encoding='utf-8')
+    exe.chmod(0o755)
+    deno = state / 'deno' / 'bin' / 'deno'
+    deno.parent.mkdir(parents=True)
+    deno.write_text('#!/bin/sh\nexit 0\n', encoding='utf-8')
+    deno.chmod(0o755)
+    marker = work / 'opened-mac'
+    env = os.environ.copy()
+    env['MOCHI_TEST_MARKER'] = str(marker)
+    entry = work / 'Run Mochi Now.app' / 'Contents' / 'MacOS' / 'Mochi'
+    result = subprocess.run(['/bin/sh', str(entry)], cwd=work, env=env,
+                            capture_output=True, text=True, timeout=15)
+    assert result.returncode == 0, result.stderr
+    assert marker.read_text(encoding='utf-8').strip() == str(state / 'app' / 'launcher.py')
