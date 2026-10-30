@@ -10,7 +10,7 @@ on:
       version:
         description: Release version (for example, v0.2.0)
         required: true
-        default: v0.2.0
+        default: v0.2.1
         type: string
 
 permissions:
@@ -45,9 +45,9 @@ jobs:
           from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 
           launchers = [
-              Path('1 INSTALL & OPEN - Windows.cmd'),
-              Path('1 INSTALL & OPEN - Mac.command'),
-              Path('1 INSTALL & OPEN - Linux.sh'),
+              Path('Install-Mochi-Windows.cmd'),
+              Path('Install-Mochi-Mac.command'),
+              Path('Install-Mochi-Linux.sh'),
               Path('📖 READ ME.txt'),
           ]
           source = [p for p in Path('app').rglob('*') if p.is_file()
@@ -71,11 +71,47 @@ jobs:
               members = set(z.namelist())
               assert {'Mochi/app/studio.py', 'Mochi/app/version.py', 'Mochi/app/guardian.py',
                   'Mochi/app/requirements.lock', 'Mochi/app/assets/hero-bunny.png',
-                      'Mochi/1 INSTALL & OPEN - Windows.cmd',
-                      'Mochi/1 INSTALL & OPEN - Mac.command',
-                      'Mochi/1 INSTALL & OPEN - Linux.sh'} <= members
+                      'Mochi/Install-Mochi-Windows.cmd',
+                      'Mochi/Install-Mochi-Mac.command',
+                      'Mochi/Install-Mochi-Linux.sh'} <= members
               assert not any('/tests/' in n or '/__pycache__/' in n for n in members)
           print(f'✅ One clean package: {len(files)} files')
+          PY
+      - name: 🔍 Smoke test the actual release ZIP
+        run: |
+          python - <<'PY'
+          import os
+          import subprocess
+          import tempfile
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          with ZipFile('dist/Mochi.zip') as z:
+              names = set(z.namelist())
+              required = {'Mochi/Install-Mochi-Linux.sh',
+                          'Mochi/Install-Mochi-Mac.command',
+                          'Mochi/Install-Mochi-Windows.cmd',
+                          'Mochi/app/assets/hero-bunny.png'}
+              assert required <= names
+              assert not any('1 INSTALL & OPEN' in name for name in names)
+              for path in ('Mochi/Install-Mochi-Linux.sh', 'Mochi/Install-Mochi-Mac.command'):
+                  assert (z.getinfo(path).external_attr >> 16) & 0o111, path
+
+              with tempfile.TemporaryDirectory(prefix='Mochi smoke & spaces ') as tmp:
+                  z.extractall(tmp)
+                  root = Path(tmp) / 'Mochi'
+                  marker = Path(tmp) / 'started'
+                  # No network: verify the archived launcher finds its sibling
+                  # bootstrap even when the extracted folder contains spaces/&.
+                  (root / 'app' / 'bootstrap.sh').write_text(
+                      '#!/bin/sh\nprintf ready > "$MOCHI_SMOKE_MARKER"\n',
+                      encoding='utf-8')
+                  env = os.environ.copy()
+                  env['MOCHI_SMOKE_MARKER'] = str(marker)
+                  subprocess.run(
+                      ['/bin/sh', str(root / 'Install-Mochi-Linux.sh')],
+                      env=env, check=True, timeout=15)
+                  assert marker.read_text(encoding='utf-8') == 'ready'
           PY
       - name: 💜 Write simple release notes
         run: |
@@ -87,7 +123,7 @@ jobs:
 
           ### ✨ Get started
           1. Download **Mochi.zip** below (not Source code).
-          2. Extract it, then double-click **1 INSTALL & OPEN** for Windows, Mac, or Linux.
+          2. Extract it, then open the **Install-Mochi** launcher for your OS (Windows / Mac / Linux).
           3. Paste a link → pick what you want → **Make it happen!**
 
           🔒 Speech recognition runs on your computer. Internet is needed for setup, AI models, and video downloads.
@@ -100,7 +136,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          VERSION: ${{ inputs.version || 'v0.2.0' }}
+          VERSION: ${{ inputs.version || 'v0.2.1' }}
         run: |
           if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo 'Expected a version such as v0.1.0'

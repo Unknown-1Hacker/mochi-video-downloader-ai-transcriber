@@ -35,7 +35,9 @@ README = """✦ MOCHI VIDEO STUDIO ✦
 # Exact files shipped by the installer or older Mochi versions; never glob-delete.
 OLD_FILES = (
     '1 INSTALL & OPEN - Linux.sh', '1 INSTALL & OPEN - Mac.command',
-    '1 INSTALL & OPEN - Windows.cmd', 'README - START HERE.txt',
+    '1 INSTALL & OPEN - Windows.cmd',
+    'Install-Mochi-Linux.sh', 'Install-Mochi-Mac.command',
+    'Install-Mochi-Windows.cmd', 'README - START HERE.txt',
     'LOOK - PREVIEW.png', 'UPDATE - READ ME.txt',
     'Run Me.command', 'Run Me.sh', 'Run Me.desktop', 'Run Me.cmd',
 )
@@ -134,7 +136,7 @@ exec /bin/sh "$ROOT/.mochi/run.sh"
 
 def _write_linux_desktop():
     # Desktop Exec escapes unsafe path characters; Path is absolute by design.
-    p = str(STATE / 'run.sh').replace('\\','\\\\').replace('"','\\"').replace('`','\\`').replace('$','\\$')
+    p = str(STATE / 'run.sh').replace('\\','\\\\').replace('"','\\"').replace('`','\\`').replace('$','\\$').replace('%','%%')
     desktop = ROOT/'Run Mochi Now.desktop'
     desktop.write_text('[Desktop Entry]\nType=Application\nVersion=1.0\nName=Run Mochi Now\nComment=Your cozy video studio\n'
                        'Exec=/bin/sh "'+p+'"\nIcon='+str(STATE/'icons'/'mochi.png')+'\nTerminal=false\nCategories=AudioVideo;\nStartupNotify=true\n',encoding='utf-8')

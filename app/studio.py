@@ -204,6 +204,8 @@ class WebHandler(BaseHTTPRequestHandler):
             self._file('mochi.svg', 'image/svg+xml')
         elif path.path == '/assets/mochi.png':
             self._file('mochi.png', 'image/png')
+        elif path.path == '/assets/hero-bunny.png':
+            self._file('hero-bunny.png', 'image/png')
         else:
             self._json(404, {'error': 'Not found.'})
 

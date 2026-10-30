@@ -51,12 +51,12 @@
 ### 🚀 Three steps. That's it.
 
 1. **[Download Mochi.zip](https://github.com/Unknown-1Hacker/mochi-video-downloader-ai-transcriber/releases/latest/download/Mochi.zip)** and extract it.
-2. **Double-click `1 INSTALL & OPEN`** for Windows, Mac, or Linux. Mochi prepares its tools.
+2. **Open `Install-Mochi-Windows.cmd`, `Install-Mochi-Mac.command`, or `Install-Mochi-Linux.sh`** for your OS. Mochi prepares its tools.
 3. **Paste a YouTube link → pick what you want → Make it happen ✦**
 
 💜 Next time, just open **Run Mochi Now**. Your downloads stay on your computer.
 
-> 💡 First setup needs internet. Your system might ask you to approve the launcher; keep its security protections enabled.
+> 💡 First setup needs internet. Your OS might ask you to approve the launcher; keep its security protections enabled. **Linux opens the file as text?** Open a terminal inside the extracted Mochi folder and run `sh ./Install-Mochi-Linux.sh`.
 
 **🛠️ Something stuck?** Open Mochi → **Fix my tools**. It can repair recognized problems without deleting your downloads.
 

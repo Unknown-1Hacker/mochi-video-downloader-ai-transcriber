@@ -50,6 +50,16 @@ def test_prepare_icon_and_launcher(work):
         assert (work/'.mochi'/'run.sh').stat().st_mode & 0o100
 
 
+def test_new_launchers_removed_only_after_success(work):
+    names = ('Install-Mochi-Linux.sh', 'Install-Mochi-Mac.command', 'Install-Mochi-Windows.cmd')
+    for name in names:
+        (work/name).write_text('original')
+    install_layout.prepare()
+    assert all((work/name).exists() for name in names)
+    install_layout.finish()
+    assert all(not (work/name).exists() for name in names)
+
+
 def test_finish_only_launcher_readme_visible(work):
     (work/'1 INSTALL & OPEN - Linux.sh').write_text('existing installer')
     (work/'LOOK - PREVIEW.png').write_text('example')
