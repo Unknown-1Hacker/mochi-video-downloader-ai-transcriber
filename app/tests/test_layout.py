@@ -332,3 +332,36 @@ def test_installed_mac_app_executes_private_launcher(work, monkeypatch):
                             capture_output=True, text=True, timeout=15)
     assert result.returncode == 0, result.stderr
     assert marker.read_text(encoding='utf-8').strip() == str(state / 'app' / 'launcher.py')
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='Windows shortcut needs native COM')
+def test_windows_shortcut_has_valid_target_and_script(work):
+    """Check the real .lnk destination and PowerShell syntax on Windows CI."""
+    install_layout.prepare()
+    script = work / '.mochi' / 'run.ps1'
+    env = os.environ.copy()
+    env['MOCHI_RUN_SCRIPT'] = str(script)
+    parse = (
+        '$tokens=$null; $errs=$null; '
+        '[System.Management.Automation.Language.Parser]::ParseFile('
+        '$env:MOCHI_RUN_SCRIPT,[ref]$tokens,[ref]$errs) | Out-Null; '
+        'if ($errs.Count -ne 0) { exit 1 }'
+    )
+    assert subprocess.run(['powershell.exe', '-NoProfile', '-Command', parse],
+                          env=env, capture_output=True, timeout=20).returncode == 0
+    link = work / 'Run Mochi Now.lnk'
+    if link.exists():
+        env['MOCHI_SHORTCUT'] = str(link)
+        inspect = (
+            '$w = New-Object -ComObject WScript.Shell; '
+            '$l = $w.CreateShortcut($env:MOCHI_SHORTCUT); '
+            'Write-Output $l.TargetPath; Write-Output $l.Arguments'
+        )
+        output = subprocess.check_output(
+            ['powershell.exe', '-NoProfile', '-Command', inspect],
+            env=env, text=True, timeout=20).splitlines()
+        assert output[0].lower().endswith('powershell.exe')
+        assert '-ExecutionPolicy Bypass' in output[1]
+        assert 'run.ps1' in output[1]
+    else:
+        assert (work / 'Run Mochi Now.cmd').is_file()
