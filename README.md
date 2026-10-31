@@ -54,6 +54,16 @@
 2. **Open `Install-Mochi-Windows.cmd`, `Install-Mochi-Mac.command`, or `Install-Mochi-Linux.sh`** for your OS. Mochi prepares its tools.
 3. **Paste a YouTube link → pick what you want → Make it happen ✦**
 
+### 🗂 First time vs next time
+
+**Download and extract `Mochi.zip` → open the `Mochi` folder.** On your OS, use **Install-Mochi** once for setup (or again for updates), then **Run Mochi Now** for everyday use.
+
+<p align="center">
+  <img src="docs/mochi-first-time-vs-next-time.webp" width="940" alt="Illustrated Mochi folder guide: on Windows first run Install-Mochi-Windows.cmd, then Run Mochi Now.lnk; on macOS first run Install-Mochi-Mac.command, then Run Mochi Now.app; on Linux first run Install-Mochi-Linux.sh, then Run Mochi Now.desktop. Keep your .mochi data folder." />
+</p>
+
+<sub>Illustration: folder appearances vary by OS; the `.mochi` folder is created during setup.</sub>
+
 💜 Next time, just open **Run Mochi Now**. Your downloads stay on your computer.
 
 > 🐧 On Linux, if the shortcut won't launch, right-click **Run Mochi Now.desktop → Allow Launching**. Or open a terminal in the Mochi folder and run `sh .mochi/run.sh`. Keep the `.mochi` folder when upgrading.
