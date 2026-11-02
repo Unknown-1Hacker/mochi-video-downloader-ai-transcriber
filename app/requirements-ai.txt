@@ -1,0 +1,4 @@
+# Only installed if a video has no usable caption track.
+# PyAV 19 breaks faster-whisper 1.2.x; keep the tested pairing.
+faster-whisper>=1.1,<1.3
+av>=16,<19
