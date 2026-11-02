@@ -2,3 +2,5 @@
 yt-dlp[default]>=2025.9.0
 imageio-ffmpeg>=0.5.0
 static-ffmpeg>=3.0
+# Small second chance for published captions; no third-party transcript sites.
+youtube-transcript-api>=1.2,<2
