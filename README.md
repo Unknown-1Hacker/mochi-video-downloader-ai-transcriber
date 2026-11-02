@@ -85,7 +85,7 @@ The ZIP is tiny, but first setup downloads private tools. Older installations ca
 
 **New installs are lighter:** Video, audio, and available-caption downloads no longer install the larger AI packages at first run. A video without usable captions may trigger an additional one-time AI download. Existing users may remove `Mochi/.mochi/cache/` after closing Mochi; **never delete the entire `.mochi` folder** just to free space.
 
-**🛠️ Something stuck?** Open Mochi → **Fix my tools**. It can repair recognized problems without deleting your downloads.
+**🛠️ Something stuck?** Open Mochi → **Fix my tools**. It can repair recognized problems without deleting your downloads. Questions? [Ask the community in the Mochi topic on 1Hack](https://onehack.st/t/mochi-free-youtube-downloader-ai-subtitles-transcript/326924).
 
 <details>
 <summary>⚙️ Requirements, privacy & developer notes</summary>
