@@ -209,22 +209,22 @@ def try_alternative_captions(url, out: Path, language, subtitle: bool, update, c
         with TimedSession() as session:
             api = YouTubeTranscriptApi(http_client=session)
             transcripts = list(api.list(video_id))
-        if cancel.is_set():
-            return None
-        if language:
-            preferred = [t for t in transcripts if
-                         str(t.language_code).lower() == language or
-                         str(t.language_code).lower().startswith(language + "-")]
-        else:
-            english = [t for t in transcripts if
-                       str(t.language_code).lower() == "en" or
-                       str(t.language_code).lower().startswith("en-")]
-            preferred = english or transcripts
-        if not preferred:
-            return None
-        # Prefer creator-written subtitles over auto captions within the language.
-        chosen = sorted(preferred, key=lambda t: bool(t.is_generated))[0]
-        fetched = chosen.fetch()
+            if cancel.is_set():
+                return None
+            if language:
+                preferred = [t for t in transcripts if
+                             str(t.language_code).lower() == language or
+                             str(t.language_code).lower().startswith(language + "-")]
+            else:
+                english = [t for t in transcripts if
+                           str(t.language_code).lower() == "en" or
+                           str(t.language_code).lower().startswith("en-")]
+                preferred = english or transcripts
+            if not preferred:
+                return None
+            # Prefer creator-written subtitles over auto captions within the language.
+            chosen = sorted(preferred, key=lambda t: bool(t.is_generated))[0]
+            fetched = chosen.fetch()
         if cancel.is_set():
             return None
         rows = []
