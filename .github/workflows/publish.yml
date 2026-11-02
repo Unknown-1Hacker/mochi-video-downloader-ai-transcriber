@@ -10,7 +10,7 @@ on:
       version:
         description: Release version (for example, v0.2.0)
         required: true
-        default: v0.3.1
+        default: v0.3.2
         type: string
 
 permissions:
@@ -129,7 +129,7 @@ jobs:
           2. Extract it, then open the **Install-Mochi** launcher for your OS (Windows / Mac / Linux).
           3. Paste a link → pick what you want → **Make it happen!**
 
-          ⚡ Tries existing captions first; downloads offline AI only if it's needed. No paid transcript service.
+          ⚡ Tries two independent methods to get existing YouTube captions. Only if both fail does it download audio and prepare local AI. No paid transcript service.
 
           💾 Storage: tools are kept privately in the hidden `Mochi/.mochi/` folder. Temporary setup cache is cleaned after success; keep `.mochi/Downloads/` (your files).
 
@@ -141,7 +141,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          VERSION: ${{ inputs.version || 'v0.3.1' }}
+          VERSION: ${{ inputs.version || 'v0.3.2' }}
         run: |
           if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo 'Expected a version such as v0.1.0'
