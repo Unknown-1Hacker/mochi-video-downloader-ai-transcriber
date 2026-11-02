@@ -197,9 +197,18 @@ def try_alternative_captions(url, out: Path, language, subtitle: bool, update, c
     if not video_id:
         return None
     try:
+        from requests import Session
         from youtube_transcript_api import YouTubeTranscriptApi
+
+        class TimedSession(Session):
+            def request(self, method, url, **kwargs):
+                kwargs.setdefault("timeout", (5, 12))
+                return super().request(method, url, **kwargs)
+
         update("Trying another quick caption method…", 9)
-        transcripts = list(YouTubeTranscriptApi().list(video_id))
+        with TimedSession() as session:
+            api = YouTubeTranscriptApi(http_client=session)
+            transcripts = list(api.list(video_id))
         if cancel.is_set():
             return None
         if language:
