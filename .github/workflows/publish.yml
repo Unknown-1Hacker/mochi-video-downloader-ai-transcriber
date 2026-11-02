@@ -10,7 +10,7 @@ on:
       version:
         description: Release version (for example, v0.2.0)
         required: true
-        default: v0.2.2
+        default: v0.3.0
         type: string
 
 permissions:
@@ -119,14 +119,14 @@ jobs:
           ## 🐰 Meet Mochi!
           **One YouTube link → your video, audio, subtitles, or transcript.**
 
-          🎬 **Video** · 🎧 **Audio** · 💬 **AI subtitles** · 📝 **Speech to text**
+          🎬 **Video** · 🎧 **Audio** · 💬 **Subtitles** · 📝 **Speech to text**
 
           ### ✨ Get started
           1. Download **Mochi.zip** below (not Source code).
           2. Extract it, then open the **Install-Mochi** launcher for your OS (Windows / Mac / Linux).
           3. Paste a link → pick what you want → **Make it happen!**
 
-          🔒 Speech recognition runs on your computer. Internet is needed for setup, AI models, and video downloads.
+          ⚡ Uses available YouTube captions first; local AI listens to the audio if captions are missing. No paid transcript service required. Internet is needed for setup, models, and downloads.
 
           🛠 **Something stuck?** Tap **Fix my tools**. Your OS may still ask you to approve the launcher.
 
@@ -136,7 +136,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          VERSION: ${{ inputs.version || 'v0.2.2' }}
+          VERSION: ${{ inputs.version || 'v0.3.0' }}
         run: |
           if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo 'Expected a version such as v0.1.0'

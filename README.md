@@ -23,7 +23,7 @@
 |:--|:--|
 | 🎬 **Full video** | Video + audio, at your chosen available quality |
 | 🎧 **Audio only** | Original audio or MP3 |
-| 💬 **Subtitles** | AI-generated SRT + VTT with timestamps |
+| 💬 **Subtitles** | Quick captions or local AI fallback, saved as SRT + VTT |
 | 📝 **Transcript** | Spoken words in a TXT file |
 
 ### 🧭 How Mochi works
@@ -40,12 +40,12 @@
 | 🎬 Video / 🎧 Audio | 💬 Subtitles / 📝 Transcript |
 |:---:|:---:|
 | **📥 [yt-dlp](https://github.com/yt-dlp/yt-dlp)** | **📥 yt-dlp → 🧠 [faster-whisper](https://github.com/SYSTRAN/faster-whisper)** |
-| Downloads your selected media and quality | Downloads the original audio, then listens to the speech locally—not existing captions |
+| Downloads your selected media and quality | Uses YouTube captions first; if missing, local AI listens to the original audio |
 | **💾 Video or audio file** | **💾 SRT + VTT subtitles or TXT text** |
 
 <p align="center">
   <strong>✅ Saved on your computer</strong><br/>
-  <sub>⚡ Smart defaults · ♻️ Reuses completed work · 🛠️ Repairs known issues · 🧹 Keeps things tidy</sub>
+  <sub>⚡ Instant captions first · ♻️ Reuses completed work · 🛠️ Repairs known issues · 🧹 Keeps things tidy</sub>
 </p>
 
 ### 🚀 Three steps. That's it.
@@ -69,6 +69,8 @@
 > 🐧 On Linux, if the shortcut won't launch, right-click **Run Mochi Now.desktop → Allow Launching**. Or open a terminal in the Mochi folder and run `sh .mochi/run.sh`. Keep the `.mochi` folder when upgrading.
 
 > 💡 First setup needs internet. Your OS might ask you to approve the launcher; keep its security protections enabled. **Linux opens the file as text?** Open a terminal inside the extracted Mochi folder and run `sh ./Install-Mochi-Linux.sh`.
+
+**💬 Fast speech-to-text:** Mochi first checks for published YouTube captions (like free transcript websites do), with no separate provider or account. If that doesn't work, it downloads the audio and runs local AI. Captions may be imperfect, so choose a different source when precision matters.
 
 **🛠️ Something stuck?** Open Mochi → **Fix my tools**. It can repair recognized problems without deleting your downloads.
 

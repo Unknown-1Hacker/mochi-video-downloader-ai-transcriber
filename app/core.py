@@ -460,8 +460,14 @@ def process(url: str, root: Path, output_root: Path, options: dict, update, canc
     if mode in ('video', 'audio'):
         profile = f'Video - {height or "Best"}p' if mode == 'video' and height else ('Video - Best' if mode == 'video' else ('Audio - MP3' if audio_mp3 else 'Audio - Original'))
         return [_download(url, root, job_dir / profile, mode, height, audio_mp3, update, cancel)]
-    media = _get_audio(url, root, output_root, update, cancel)
-    results = recognize(media, job_dir, quality, language, mode == 'subtitles', update, cancel)
+    # Published caption tracks give instant results; if unavailable, hear the audio locally.
+    from captions import try_captions
+    results = try_captions(url, root, job_dir, language, mode == 'subtitles', update, cancel)
+    if results is None:
+        _checkpoint(cancel)
+        update('Captions unavailable. Listening to original audio with local AI…', 10)
+        media = _get_audio(url, root, output_root, update, cancel)
+        results = recognize(media, job_dir, quality, language, mode == 'subtitles', update, cancel)
     cfg = {'url': url, 'mode': mode, 'quality': quality, 'language': language, 'version': 1}
     manifest = job_dir / ('.mochi-' + mode + '.json')
     meta = {'config': cfg, 'hashes': {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in results}}
