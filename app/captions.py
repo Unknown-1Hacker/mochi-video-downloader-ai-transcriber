@@ -166,7 +166,7 @@ def _video_id(url: str):
     try:
         parsed = urlsplit(url)
         host = (parsed.hostname or "").lower().rstrip(".")
-        if parsed.scheme not in ("https", "http"):
+        if parsed.scheme not in ("https", "http") or parsed.username or parsed.password:
             return None
         if host == "youtu.be":
             candidate = parsed.path.strip("/")
