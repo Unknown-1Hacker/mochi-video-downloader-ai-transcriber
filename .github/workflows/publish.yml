@@ -70,7 +70,8 @@ jobs:
               assert z.testzip() is None
               members = set(z.namelist())
               assert {'Mochi/app/studio.py', 'Mochi/app/version.py', 'Mochi/app/guardian.py',
-                  'Mochi/app/requirements.lock', 'Mochi/app/assets/hero-bunny.png',
+                  'Mochi/app/requirements.lock', 'Mochi/app/captions.py',
+                  'Mochi/app/assets/hero-bunny.png',
                       'Mochi/Install-Mochi-Windows.cmd',
                       'Mochi/Install-Mochi-Mac.command',
                       'Mochi/Install-Mochi-Linux.sh'} <= members
