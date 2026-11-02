@@ -112,7 +112,7 @@ def test_1hack_credit_is_real_link():
 
 
 def test_compatible_pin_prevents_new_bad_setup():
-    content=(Path(core.__file__).parent/'requirements.txt').read_text(encoding='utf-8')
+    content=(Path(core.__file__).parent/'requirements-ai.txt').read_text(encoding='utf-8')
     assert 'av>=16,<19' in content
     assert 'faster-whisper>=1.1,<1.3' in content
 

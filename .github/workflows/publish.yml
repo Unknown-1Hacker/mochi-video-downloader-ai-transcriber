@@ -10,7 +10,7 @@ on:
       version:
         description: Release version (for example, v0.2.0)
         required: true
-        default: v0.3.0
+        default: v0.3.1
         type: string
 
 permissions:
@@ -32,12 +32,13 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y ffmpeg
-          python -m pip install -r app/requirements.txt pytest numpy pillow
+          python -m pip install -r app/requirements.txt -r app/requirements-ai.txt pytest numpy pillow
           python -m pytest -q
       - name: 🔒 Resolve one portable dependency set
         run: |
           python -m pip install uv
           uv pip compile --universal --python-version 3.12 app/requirements.txt -o app/requirements.lock
+          uv pip compile --universal --python-version 3.12 app/requirements-ai.txt -o app/requirements-ai.lock
       - name: 📦 Build one clean Mochi.zip
         run: |
           python - <<'PY'
@@ -70,7 +71,8 @@ jobs:
               assert z.testzip() is None
               members = set(z.namelist())
               assert {'Mochi/app/studio.py', 'Mochi/app/version.py', 'Mochi/app/guardian.py',
-                  'Mochi/app/requirements.lock', 'Mochi/app/captions.py',
+                  'Mochi/app/requirements.lock', 'Mochi/app/requirements-ai.lock',
+                  'Mochi/app/captions.py',
                   'Mochi/app/assets/hero-bunny.png',
                       'Mochi/Install-Mochi-Windows.cmd',
                       'Mochi/Install-Mochi-Mac.command',
@@ -127,7 +129,9 @@ jobs:
           2. Extract it, then open the **Install-Mochi** launcher for your OS (Windows / Mac / Linux).
           3. Paste a link → pick what you want → **Make it happen!**
 
-          ⚡ Uses available YouTube captions first; local AI listens to the audio if captions are missing. No paid transcript service required. Internet is needed for setup, models, and downloads.
+          ⚡ Tries existing captions first; downloads offline AI only if it's needed. No paid transcript service.
+
+          💾 Storage: tools are kept privately in the hidden `Mochi/.mochi/` folder. Temporary setup cache is cleaned after success; keep `.mochi/Downloads/` (your files).
 
           🛠 **Something stuck?** Tap **Fix my tools**. Your OS may still ask you to approve the launcher.
 
@@ -137,7 +141,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          VERSION: ${{ inputs.version || 'v0.3.0' }}
+          VERSION: ${{ inputs.version || 'v0.3.1' }}
         run: |
           if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo 'Expected a version such as v0.1.0'

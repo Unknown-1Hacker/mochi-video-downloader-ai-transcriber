@@ -99,9 +99,23 @@ def repair(root: Path, update, *, only_downloader: bool = False, cancelled=None)
     if cancelled is not None and cancelled.is_set():
         raise RepairError('Repair cancelled after installing tools.')
     if not only_downloader:
+        # Keep the AI engine optional. Repair it only if it was already installed.
+        if report_before.get('versions', {}).get('faster-whisper'):
+            ai_requirements = app_dir(root) / 'requirements-ai.lock'
+            if not ai_requirements.is_file():
+                ai_requirements = app_dir(root) / 'requirements-ai.txt'
+            if ai_requirements.is_file():
+                with log.open('a', encoding='utf-8') as handle:
+                    p = subprocess.run([uv, 'pip', 'install', '--python', sys.executable,
+                                        '-r', str(ai_requirements)],
+                                       stdout=handle, stderr=subprocess.STDOUT,
+                                       stdin=subprocess.DEVNULL, check=False, timeout=600)
+                if p.returncode != 0:
+                    raise RepairError('AI repair needs internet. Your saved files were kept; check .mochi/repair.log.')
         update('Checking audio and media tools…', 80)
         from core import ensure_ffmpeg
         ensure_ffmpeg(root)
+        trim_setup_cache(root)
     report_after = inspect(root)
     update('Tool check complete ✓', 100)
     return {'before': report_before, 'after': report_after, 'elapsed_seconds': round(time.monotonic() - start, 1)}
@@ -166,3 +180,78 @@ def restore_downloader(root: Path, previous_version: str) -> bool:
         return p.returncode == 0
     except (OSError, subprocess.TimeoutExpired, RepairError):
         return False
+
+
+def trim_setup_cache(root: Path) -> bool:
+    """Remove only Mochi's temporary uv downloads; never models or user media.
+
+    Runs after a successful installation, not during an interrupted setup.
+    No following of user-supplied symbolic links.
+    """
+    state = Path(root) / '.mochi'
+    cache = state / 'cache'
+    if state.is_symlink() or cache.is_symlink() or not cache.is_dir():
+        return False
+    try:
+        shutil.rmtree(cache)
+        return True
+    except OSError:
+        return False  # Lack of cleanup permissions must not break Mochi.
+
+
+def ensure_speech_tools(root: Path, update, cancelled=None) -> bool:
+    """Install local Whisper only when the first uncaptained video needs it.
+
+    The normal installer intentionally omits the large AI dependencies.
+    Existing installs are reused and failures leave media untouched.
+    """
+    try:
+        import faster_whisper
+        import ctranslate2
+        return False
+    except ImportError:
+        pass
+
+    if cancelled is not None and cancelled.is_set():
+        raise RepairError('Cancelled before preparing AI.')
+    root = Path(root)
+    req = app_dir(root) / 'requirements-ai.lock'
+    if not req.is_file():
+        req = app_dir(root) / 'requirements-ai.txt'
+    if not req.is_file():
+        raise RepairError('Mochi AI setup files are missing. Extract the latest Mochi.zip and run setup again.')
+    uv = _uv(root)
+    update('Preparing local AI for the first time (needs internet)…', 67)
+    state = root / '.mochi'
+    state.mkdir(parents=True, exist_ok=True)
+    log = state / 'ai-setup.log'
+    environment = os.environ.copy()
+    environment['UV_CACHE_DIR'] = str(state / 'cache')
+    environment['UV_PYTHON_INSTALL_DIR'] = str(state / 'python')
+    try:
+        with log.open('a', encoding='utf-8') as handle:
+            if os.name != 'nt':
+                os.chmod(log, 0o600)
+            handle.write('\n--- Optional offline AI setup ---\n')
+            handle.flush()
+            result = subprocess.run(
+                [uv, 'pip', 'install', '--python', sys.executable, '-r', str(req)],
+                stdout=handle, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                env=environment, timeout=900, check=False
+            )
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        raise RepairError('Local AI setup could not finish. Check internet and free disk space, then retry. Details: .mochi/ai-setup.log') from exc
+    if result.returncode != 0:
+        raise RepairError('Could not prepare local AI. Check internet and free disk space, then retry. Details: .mochi/ai-setup.log')
+    if cancelled is not None and cancelled.is_set():
+        raise RepairError('Cancelled after preparing AI. Your files were kept.')
+    import importlib
+    importlib.invalidate_caches()
+    try:
+        import faster_whisper
+        import ctranslate2
+    except ImportError as exc:
+        raise RepairError('Local AI setup is incomplete. Run Fix my tools and try again.') from exc
+    trim_setup_cache(root)
+    update('Local AI is ready.', 68)
+    return True

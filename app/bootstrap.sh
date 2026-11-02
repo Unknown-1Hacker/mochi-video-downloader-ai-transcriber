@@ -25,7 +25,7 @@ fi
 [ -x "$UV" ] || { echo 'Could not prepare setup helper.' >&2; exit 1; }
 printf '[2/5] Preparing private Python…\n'
 "$UV" venv --python 3.12 "$STATE/venv"
-printf '[3/5] Preparing video and AI tools…\n'
+printf '[3/5] Preparing video tools…\n'
 REQ="$HERE/requirements.lock"
 [ -f "$REQ" ] || REQ="$HERE/requirements.txt"
 "$UV" pip install --python "$PY" -r "$REQ"

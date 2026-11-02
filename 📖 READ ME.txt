@@ -7,5 +7,6 @@
 🐧 Linux shortcut blocked? Right-click → Allow Launching; fallback: sh .mochi/run.sh
 🔗 Paste a YouTube link → choose → Make it happen.
 📂 Saved files: tap Open my saved files after completion.
+💾 In hidden .mochi/: keep Downloads; cache is safe to clear when closed. AI is optional.
 🛠 Stuck? Fix my tools (top right).
 💜 Made with love by 1Hack — OneHack.st

@@ -70,9 +70,25 @@
 
 > 💡 First setup needs internet. Your OS might ask you to approve the launcher; keep its security protections enabled. **Linux opens the file as text?** Open a terminal inside the extracted Mochi folder and run `sh ./Install-Mochi-Linux.sh`.
 
-**💬 Fast speech-to-text:** Mochi first checks for published YouTube captions (like free transcript websites do), with no separate provider or account. If that doesn't work, it downloads the audio and runs local AI. Captions may be imperfect, so choose a different source when precision matters.
+**💬 Fast speech-to-text:** Mochi checks for existing YouTube captions first—no paid website needed. If those aren't usable, it downloads the audio and prepares local AI **only then**. AI accuracy depends on the sound and language.
 
-**🛠️ Something stuck?** Open Mochi → **Fix my tools**. It can repair recognized problems without deleting your downloads.
+### 💾 Why does Mochi use storage?
+
+The ZIP is tiny, but first setup downloads private tools. Older installations can use **hundreds of MB or more**, especially with AI and temporary setup files. Most files live in the hidden `.mochi` folder inside your extracted **Mochi** folder.
+
+**To find it:** Windows File Explorer → **View → Show → Hidden items** · macOS Finder → **Cmd + Shift + .** · Linux file manager → **Ctrl + H**.
+
+| Inside `Mochi/.mochi/` | What's there | Can I remove it? |
+|:--|:--|:--|
+| `cache/` | Temporary setup downloads | ✅ **Yes**, when Mochi is closed. New versions clean it automatically after successful setup. |
+| `models/` | AI speech models, downloaded only when AI is needed | ♻️ **Optional**—removing them frees space, but Mochi will download them again if needed. |
+| `Downloads/` | **Your saved videos, audio, subtitles and transcripts** | 🛑 **Keep**, unless you intentionally want to delete your own files. |
+| `Downloads/.mochi/audio-cache/` | Reusable audio from previous transcription jobs | ♻️ **Optional**—safe to clear when Mochi is closed; the audio may be downloaded again. |
+| `venv/`, `python/`, `ffmpeg/`, `deno/`, `tools/`, `app/` | Programs needed to run Mochi | 🔒 **Keep** for normal use. |
+
+**New installs are lighter:** Video, audio, and available-caption downloads no longer install the larger AI packages at first run. A video without usable captions may trigger an additional one-time AI download. Existing users may remove `Mochi/.mochi/cache/` after closing Mochi; **never delete the entire `.mochi` folder** just to free space.
+
+**🛠️ Something stuck?** Open Mochi → **Fix my tools**. It can repair recognized problems without deleting your downloads. Questions? [Ask the community in the Mochi topic on 1Hack](https://onehack.st/t/mochi-free-youtube-downloader-ai-subtitles-transcript/326924).
 
 <details>
 <summary>⚙️ Requirements, privacy & developer notes</summary>

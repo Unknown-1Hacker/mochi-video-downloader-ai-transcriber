@@ -256,6 +256,8 @@ def _get_audio(url: str, root: Path, output_root: Path, update, cancel) -> Path:
 
 
 def _whisper_engine(quality: str, update, cancel):
+    from doctor import ensure_speech_tools
+    ensure_speech_tools(root_dir(__file__), update, cancel)
     from faster_whisper import WhisperModel
     model_folder = root_dir(__file__) / '.mochi' / 'models'
     model_folder.mkdir(parents=True, exist_ok=True)
