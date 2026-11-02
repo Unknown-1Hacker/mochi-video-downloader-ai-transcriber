@@ -80,6 +80,33 @@ def _language(info, requested):
     return None
 
 
+def _save_rows(rows, out: Path, subtitle: bool, cancel):
+    """Publish timed captions or text through the same atomic staging path."""
+    from core import stamp
+    contents = (
+        {"Subtitles.srt": "".join(
+            f"{i}\n{stamp(start)} --> {stamp(end)}\n{text}\n\n"
+            for i, (start, end, text) in enumerate(rows, 1)),
+         "Subtitles.vtt": "WEBVTT\n\n" + "".join(
+             f"{stamp(start, True)} --> {stamp(end, True)}\n{text}\n\n"
+             for start, end, text in rows)}
+        if subtitle else
+        {"Transcript.txt": "\n".join(text for _, _, text in rows) + "\n"}
+    )
+    with tempfile.TemporaryDirectory(prefix=".captions-out-", dir=out) as folder:
+        stage = Path(folder)
+        for name, body in contents.items():
+            (stage / name).write_text(body, encoding="utf-8")
+        if cancel.is_set():
+            return None
+        saved = []
+        for name in contents:
+            target = out / name
+            os.replace(stage / name, target)
+            saved.append(target)
+    return saved
+
+
 def try_captions(url, root: Path, out: Path, language, subtitle: bool, update, cancel):
     """Return SRT/VTT or TXT paths, or None to use original-audio local AI.
 
@@ -120,29 +147,9 @@ def try_captions(url, root: Path, out: Path, language, subtitle: bool, update, c
         if not rows or cancel.is_set():
             return None
 
-        from core import stamp
-        contents = (
-            {"Subtitles.srt": "".join(
-                f"{i}\n{stamp(start)} --> {stamp(end)}\n{text}\n\n"
-                for i, (start, end, text) in enumerate(rows, 1)),
-             "Subtitles.vtt": "WEBVTT\n\n" + "".join(
-                 f"{stamp(start, True)} --> {stamp(end, True)}\n{text}\n\n"
-                 for start, end, text in rows)}
-            if subtitle else
-            {"Transcript.txt": "\n".join(text for _, _, text in rows) + "\n"}
-        )
-        # Fully prepare outputs in a temporary folder before publishing any.
-        with tempfile.TemporaryDirectory(prefix=".captions-out-", dir=out) as folder:
-            stage = Path(folder)
-            for name, body in contents.items():
-                (stage / name).write_text(body, encoding="utf-8")
-            if cancel.is_set():
-                return None
-            saved = []
-            for name in contents:
-                target = out / name
-                os.replace(stage / name, target)
-                saved.append(target)
+        saved = _save_rows(rows, out, subtitle, cancel)
+        if saved is None:
+            return None
         update("Instant captions saved! No AI model needed.", 98)
         return saved
     except (OSError, ValueError, TypeError, RuntimeError, UnicodeError):
@@ -150,4 +157,94 @@ def try_captions(url, root: Path, out: Path, language, subtitle: bool, update, c
     except Exception:
         # yt-dlp raises its own extractor/download subclasses.
         # This is a best-effort fast path; local AI remains authoritative fallback.
+        return None
+
+
+def _video_id(url: str):
+    """Accept only one standard YouTube video ID (no arbitrary remote URLs)."""
+    from urllib.parse import parse_qs, urlsplit
+    try:
+        parsed = urlsplit(url)
+        host = (parsed.hostname or "").lower().rstrip(".")
+        if parsed.scheme not in ("https", "http"):
+            return None
+        if host == "youtu.be":
+            candidate = parsed.path.strip("/")
+        elif host in ("youtube.com", "youtube-nocookie.com") or host.endswith((".youtube.com", ".youtube-nocookie.com")):
+            parts = parsed.path.strip("/").split("/")
+            if parts[0] == "watch":
+                candidate = (parse_qs(parsed.query).get("v") or [""])[0]
+            elif len(parts) == 2 and parts[0] in ("shorts", "live", "embed", "v"):
+                candidate = parts[1]
+            else:
+                return None
+        else:
+            return None
+        return candidate if re.fullmatch(r"[A-Za-z0-9_-]{11}", candidate) else None
+    except (ValueError, TypeError, AttributeError):
+        return None
+
+
+def try_alternative_captions(url, out: Path, language, subtitle: bool, update, cancel):
+    """Second independent YouTube caption method; local audio AI remains last.
+
+    Uses the maintained youtube-transcript-api library, not scraping hosted
+    transcript sites or attempting to bypass their usage restrictions.
+    """
+    if cancel.is_set():
+        return None
+    video_id = _video_id(url)
+    if not video_id:
+        return None
+    try:
+        from youtube_transcript_api import YouTubeTranscriptApi
+        update("Trying another quick caption method…", 9)
+        transcripts = list(YouTubeTranscriptApi().list(video_id))
+        if cancel.is_set():
+            return None
+        if language:
+            preferred = [t for t in transcripts if
+                         str(t.language_code).lower() == language or
+                         str(t.language_code).lower().startswith(language + "-")]
+        else:
+            english = [t for t in transcripts if
+                       str(t.language_code).lower() == "en" or
+                       str(t.language_code).lower().startswith("en-")]
+            preferred = english or transcripts
+        if not preferred:
+            return None
+        # Prefer creator-written subtitles over auto captions within the language.
+        chosen = sorted(preferred, key=lambda t: bool(t.is_generated))[0]
+        fetched = chosen.fetch()
+        if cancel.is_set():
+            return None
+        rows = []
+        text_size = 0
+        import math
+        for snippet in fetched:
+            if cancel.is_set():
+                return None
+            try:
+                start, duration = float(snippet.start), float(snippet.duration)
+                if not (math.isfinite(start) and math.isfinite(duration) and
+                        start >= 0 and duration > 0 and math.isfinite(start + duration)):
+                    continue
+                text = " ".join(html.unescape(_TAG.sub("", snippet.text)).split())
+                if not text:
+                    continue
+                text_size += len(text.encode("utf-8"))
+                if text_size > 8 * 1024 * 1024 or len(rows) >= 50000:
+                    return None
+                rows.append((start, start + duration, text))
+            except (TypeError, ValueError, AttributeError):
+                continue
+        if not rows or cancel.is_set():
+            return None
+        saved = _save_rows(rows, out, subtitle, cancel)
+        if saved is not None:
+            update("Quick captions saved! No AI model needed.", 98)
+        return saved
+    except Exception:
+        # Providers, network and caption availability can change; never let a
+        # failed caption lookup prevent original-audio transcription.
         return None
