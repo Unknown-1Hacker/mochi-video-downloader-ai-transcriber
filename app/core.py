@@ -256,6 +256,10 @@ def _get_audio(url: str, root: Path, output_root: Path, update, cancel) -> Path:
 
 
 def _whisper_engine(quality: str, update, cancel):
+    # Caption-first requests never reach here. Prepare the large AI stack only
+    # when speech recognition of the actual audio is really required.
+    from ai_setup import ensure_ai
+    ensure_ai(root_dir(__file__), update, cancel)
     from faster_whisper import WhisperModel
     model_folder = root_dir(__file__) / '.mochi' / 'models'
     model_folder.mkdir(parents=True, exist_ok=True)
