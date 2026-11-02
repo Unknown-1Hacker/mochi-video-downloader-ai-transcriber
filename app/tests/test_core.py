@@ -75,6 +75,8 @@ def test_download_formats_follow_settings():
     assert core._formats('audio',None)=='bestaudio/best'
 
 def fake_whisper(monkeypatch, segments, gpu=False, gpu_fails=False):
+    import ai_setup
+    monkeypatch.setattr(ai_setup, 'ensure_ai', lambda *args: None)
     attempts=[]
     class WhisperModel:
         def __init__(self,model,device,compute_type,download_root=None):
