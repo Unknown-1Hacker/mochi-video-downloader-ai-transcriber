@@ -30,7 +30,6 @@ README = """✦ MOCHI VIDEO STUDIO ✦
 💾 In hidden .mochi/: keep Downloads; cache is safe to clear when closed. AI is optional.
 
 🛠 Stuck? Tap Fix my tools (top right).
-💾 Your downloads stay on this computer.
 💜 Made with love by 1Hack — OneHack.st
 """
 
