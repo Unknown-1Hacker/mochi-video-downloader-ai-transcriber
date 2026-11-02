@@ -13,6 +13,7 @@ try {
     $env:UV_NO_MODIFY_PATH = '1'
     $env:UV_PYTHON_INSTALL_DIR = Join-Path $State 'python'
     $env:UV_CACHE_DIR = Join-Path $State 'cache'
+    $env:UV_NO_CACHE = '1'
     Write-Host '✦ Mochi is taking care of setup ✦' -ForegroundColor Magenta
     if (-not (Test-Path $Uv)) {
         $existing = Get-Command uv.exe -ErrorAction SilentlyContinue
