@@ -30,7 +30,7 @@
 
 <p align="center">
   <strong>🖱️ Open Mochi</strong><br/>
-  <sub>Checks its tools and prepares what's missing</sub><br/><br/>
+  <sub>Starts with essentials; adds AI tools only if needed</sub><br/><br/>
   ⬇️<br/><br/>
   <strong>🔗 Paste a YouTube link → 🎯 Pick what you want</strong><br/>
   <sub>Best available quality by default, or choose your own</sub><br/><br/>
@@ -66,11 +66,13 @@
 
 💜 Next time, just open **Run Mochi Now**. Your downloads stay on your computer.
 
+**💾 Why the setup can be larger than the ZIP:** First run downloads a private Python environment and video tools. Heavy AI software is only downloaded if subtitles/transcript need speech recognition (when usable YouTube captions aren't available); the AI model is downloaded on first use too. Size varies by computer. Mochi clears its disposable installation cache after successful setup, **not your saved files or AI models**.
+
 > 🐧 On Linux, if the shortcut won't launch, right-click **Run Mochi Now.desktop → Allow Launching**. Or open a terminal in the Mochi folder and run `sh .mochi/run.sh`. Keep the `.mochi` folder when upgrading.
 
 > 💡 First setup needs internet. Your OS might ask you to approve the launcher; keep its security protections enabled. **Linux opens the file as text?** Open a terminal inside the extracted Mochi folder and run `sh ./Install-Mochi-Linux.sh`.
 
-**💬 Fast speech-to-text:** Mochi first checks for published YouTube captions (like free transcript websites do), with no separate provider or account. If that doesn't work, it downloads the audio and runs local AI. Captions may be imperfect, so choose a different source when precision matters.
+**💬 Captions first:** Mochi uses published YouTube captions when available. Otherwise it downloads the audio and uses local AI; this first AI use needs extra storage, internet, and setup time. Results can contain mistakes.
 
 **🛠️ Something stuck?** Open Mochi → **Fix my tools**. It can repair recognized problems without deleting your downloads.
 
