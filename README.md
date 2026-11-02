@@ -83,6 +83,7 @@ The ZIP is tiny, but first setup downloads private tools. Older installations ca
 | `cache/` | Temporary setup downloads | ✅ **Yes**, when Mochi is closed. New versions clean it automatically after successful setup. |
 | `models/` | AI speech models, downloaded only when AI is needed | ♻️ **Optional**—removing them frees space, but Mochi will download them again if needed. |
 | `Downloads/` | **Your saved videos, audio, subtitles and transcripts** | 🛑 **Keep**, unless you intentionally want to delete your own files. |
+| `Downloads/.mochi/audio-cache/` | Reusable audio from previous transcription jobs | ♻️ **Optional**—safe to clear when Mochi is closed; the audio may be downloaded again. |
 | `venv/`, `python/`, `ffmpeg/`, `deno/`, `tools/`, `app/` | Programs needed to run Mochi | 🔒 **Keep** for normal use. |
 
 **New installs are lighter:** Video, audio, and available-caption downloads no longer install the larger AI packages at first run. A video without usable captions may trigger an additional one-time AI download. Existing users may remove `Mochi/.mochi/cache/` after closing Mochi; **never delete the entire `.mochi` folder** just to free space.
