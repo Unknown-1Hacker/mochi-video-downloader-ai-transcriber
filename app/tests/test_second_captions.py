@@ -33,6 +33,8 @@ class Track:
 def fake_api(monkeypatch, tracks, *, error=None, cancel=None):
     calls = []
     class Api:
+        def __init__(self, http_client=None):
+            assert http_client is not None
         def list(self, video_id):
             calls.append(video_id)
             if cancel is not None:
