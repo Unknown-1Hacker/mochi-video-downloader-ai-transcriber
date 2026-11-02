@@ -39,8 +39,8 @@
 
 | 🎬 Video / 🎧 Audio | 💬 Subtitles / 📝 Transcript |
 |:---:|:---:|
-| **📥 [yt-dlp](https://github.com/yt-dlp/yt-dlp)** | **📥 yt-dlp → 🧠 [faster-whisper](https://github.com/SYSTRAN/faster-whisper)** |
-| Downloads your selected media and quality | Uses YouTube captions first; if missing, local AI listens to the original audio |
+| **📥 [yt-dlp](https://github.com/yt-dlp/yt-dlp)** | **⚡ YouTube captions → 🧠 [faster-whisper](https://github.com/SYSTRAN/faster-whisper), if needed** |
+| Downloads your selected media and quality | Tries two caption methods; if neither works, local AI listens to the original audio |
 | **💾 Video or audio file** | **💾 SRT + VTT subtitles or TXT text** |
 
 <p align="center">
@@ -70,7 +70,7 @@
 
 > 💡 First setup needs internet. Your OS might ask you to approve the launcher; keep its security protections enabled. **Linux opens the file as text?** Open a terminal inside the extracted Mochi folder and run `sh ./Install-Mochi-Linux.sh`.
 
-**💬 Fast speech-to-text:** Mochi checks for existing YouTube captions first—no paid website needed. If those aren't usable, it downloads the audio and prepares local AI **only then**. AI accuracy depends on the sound and language.
+**💬 Fast speech-to-text:** Mochi checks YouTube captions two ways, using [yt-dlp](https://github.com/yt-dlp/yt-dlp) then [youtube-transcript-api](https://github.com/jdepoix/youtube-transcript-api). If neither can find usable captions, Mochi downloads the audio and prepares **local AI only then**. Caption and AI accuracy depend on the video.
 
 ### 💾 Why does Mochi use storage?
 
@@ -95,6 +95,7 @@ The ZIP is tiny, but first setup downloads private tools. Older installations ca
 
 - **System:** Modern 64-bit Windows, macOS, or Linux. Compatibility with every device isn't guaranteed.
 - **Internet:** Needed for setup, AI model downloads, and video downloads; speech recognition runs locally without a cloud transcription API.
+- **Transcript sources:** Mochi retrieves publicly available YouTube captions directly rather than automatically scraping external transcript websites (which may restrict bots). Both methods can fail when YouTube changes or captions are unavailable; audio-based AI is the fallback.
 - **Permissions:** Download only content you're allowed to save, respecting site terms and creators' rights.
 - **Contributing:** Source lives in `app/`. To run tests, install Python dependencies plus `pytest`, `numpy`, `pillow`, and FFmpeg, then run `python -m pytest -q`. Automated checks don't guarantee every video or OS setup will work.
 
