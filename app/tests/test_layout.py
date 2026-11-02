@@ -368,3 +368,21 @@ def test_windows_shortcut_has_valid_target_and_script(work):
         assert 'run.ps1' in output[1]
     else:
         assert (work / 'Run Mochi Now.cmd').is_file()
+
+
+def test_successful_setup_cleans_only_private_install_cache(work):
+    state = work / '.mochi'
+    install_layout.prepare()
+    cache = state / 'cache'
+    cache.mkdir(parents=True)
+    (cache / 'packages.tmp').write_text('temporary', encoding='utf-8')
+    model = state / 'models' / 'reusable.bin'
+    model.parent.mkdir(parents=True)
+    model.write_text('KEEP', encoding='utf-8')
+    media = state / 'Downloads' / 'do-not-delete.mp4'
+    media.parent.mkdir(parents=True)
+    media.write_text('MY VIDEO', encoding='utf-8')
+    install_layout.finish()
+    assert not cache.exists()
+    assert model.read_text(encoding='utf-8') == 'KEEP'
+    assert media.read_text(encoding='utf-8') == 'MY VIDEO'
