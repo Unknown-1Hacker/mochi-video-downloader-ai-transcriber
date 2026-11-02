@@ -151,6 +151,7 @@ def test_corrupt_cached_audio_is_deleted_and_redownloaded(tmp_path,monkeypatch):
     assert not p.exists()
 
 def test_verified_transcripts_reuse_with_matching_settings(tmp_path,monkeypatch):
+    monkeypatch.setattr('captions.try_captions',lambda *args:None)
     monkeypatch.setattr(core,'_get_audio',lambda *a,**k:tmp_path/'audio.m4a')
     counter=[]
     def recog(media,out,*args):
