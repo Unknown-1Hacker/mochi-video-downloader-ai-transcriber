@@ -21,6 +21,8 @@ def sample_audio(tmp_path):
 
 
 def mock_model(monkeypatch, *, fail_on_iteration=False, fail_both=False, cuda=False):
+    import ai_setup
+    monkeypatch.setattr(ai_setup, 'ensure_ai', lambda *args: None)
     calls=[]
     class WhisperModel:
         def __init__(self, model, device, compute_type, download_root):
@@ -69,6 +71,8 @@ def test_decoder_fallback_is_bounded(tmp_path,monkeypatch):
 
 
 def test_other_type_errors_not_swallowed(tmp_path,monkeypatch):
+    import ai_setup
+    monkeypatch.setattr(ai_setup, 'ensure_ai', lambda *args: None)
     class BadModel:
         def __init__(self,*args,**kwargs): pass
         def transcribe(self,*args,**kwargs):raise TypeError('A totally unrelated library bug')
@@ -112,7 +116,7 @@ def test_1hack_credit_is_real_link():
 
 
 def test_compatible_pin_prevents_new_bad_setup():
-    content=(Path(core.__file__).parent/'requirements.txt').read_text(encoding='utf-8')
+    content=(Path(core.__file__).parent/'requirements-ai.txt').read_text(encoding='utf-8')
     assert 'av>=16,<19' in content
     assert 'faster-whisper>=1.1,<1.3' in content
 
