@@ -6,6 +6,11 @@ on:
 permissions:
   contents: read
 
+# Keep only the newest test attempt per branch; never queue obsolete edits.
+concurrency:
+  group: mochi-tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   tests:
     name: ${{ matrix.os }}
