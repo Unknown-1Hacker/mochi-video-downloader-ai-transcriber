@@ -1,0 +1,4 @@
+# Installed only when published YouTube captions are missing or unusable.
+# faster-whisper 1.2.x requires PyAV <19 (metadata_errors compatibility).
+faster-whisper>=1.1,<1.3
+av>=16,<19
