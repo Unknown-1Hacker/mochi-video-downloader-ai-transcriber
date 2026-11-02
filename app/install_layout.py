@@ -65,7 +65,7 @@ if [ ! -d "$APP" ]; then
   printf 'Mochi app files are missing. Extract a fresh Mochi.zip and run setup again.\n' >> "$LOG"
   exit 1
 fi
-if [ ! -x "$PY" ] || ! "$PY" -c 'import importlib.util as u; assert u.find_spec("yt_dlp") and u.find_spec("faster_whisper")' >/dev/null 2>&1; then
+if [ ! -x "$PY" ] || ! "$PY" -c 'import importlib.util as u; assert u.find_spec("yt_dlp")' >/dev/null 2>&1; then
   /bin/sh "$APP/bootstrap.sh" >> "$LOG" 2>&1
   CODE=$?
 elif [ ! -x "$STATE/deno/bin/deno" ] && ! command -v deno >/dev/null 2>&1; then
@@ -94,7 +94,7 @@ $App = Join-Path $State 'app'
 try {
     $NeedSetup = -not (Test-Path $Py)
     if (-not $NeedSetup) {
-        & $Py -c 'import importlib.util as u; assert u.find_spec("yt_dlp") and u.find_spec("faster_whisper")'
+        & $Py -c 'import importlib.util as u; assert u.find_spec("yt_dlp")'
         if ($LASTEXITCODE -ne 0) { $NeedSetup = $true }
     }
     if (-not (Test-Path (Join-Path $State 'deno\bin\deno.exe')) -and -not (Get-Command deno.exe -ErrorAction SilentlyContinue)) { $NeedSetup = $true }
@@ -326,6 +326,9 @@ def finish():
         f=ROOT/name
         if f.is_file() or f.is_symlink():f.unlink(missing_ok=True)
     _organize_repository_extras()
+    # Discard only temporary install downloads after successful setup.
+    from doctor import trim_setup_cache
+    trim_setup_cache(ROOT)
     if os.name=='nt':
         subprocess.run(['attrib','+h',str(STATE)],capture_output=True,check=False)
 
