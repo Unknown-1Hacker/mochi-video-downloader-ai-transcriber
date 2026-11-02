@@ -76,6 +76,8 @@
 
 The ZIP is tiny, but first setup downloads private tools. Older installations can use **hundreds of MB or more**, especially with AI and temporary setup files. Most files live in the hidden `.mochi` folder inside your extracted **Mochi** folder.
 
+**To find it:** Windows File Explorer → **View → Show → Hidden items** · macOS Finder → **Cmd + Shift + .** · Linux file manager → **Ctrl + H**.
+
 | Inside `Mochi/.mochi/` | What's there | Can I remove it? |
 |:--|:--|:--|
 | `cache/` | Temporary setup downloads | ✅ **Yes**, when Mochi is closed. New versions clean it automatically after successful setup. |
