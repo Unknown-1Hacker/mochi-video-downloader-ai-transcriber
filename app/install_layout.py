@@ -326,6 +326,14 @@ def finish():
         f=ROOT/name
         if f.is_file() or f.is_symlink():f.unlink(missing_ok=True)
     _organize_repository_extras()
+    # Package download cache is disposable; never touch models, media or app.
+    # Symlinks are explicitly excluded to avoid traversing user-owned paths.
+    cache = STATE / 'cache'
+    if cache.is_dir() and not cache.is_symlink():
+        try:
+            shutil.rmtree(cache)
+        except OSError:
+            pass  # Cache cleanup is optional, not a reason to break setup.
     if os.name=='nt':
         subprocess.run(['attrib','+h',str(STATE)],capture_output=True,check=False)
 
