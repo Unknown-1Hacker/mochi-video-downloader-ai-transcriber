@@ -27,9 +27,7 @@ README = """✦ MOCHI VIDEO STUDIO ✦
 🎬 Pick video / audio / subtitles / text
 ✨ Press Make it happen
 📂 Saved files: tap Open my saved files after completion.
-💾 Tools live in hidden .mochi/; keep .mochi/Downloads/.
-🧹 After closing Mochi, you may delete .mochi/cache/.
-🧠 AI downloads only if captions are missing.
+💾 In hidden .mochi/: keep Downloads; cache is safe to clear when closed. AI is optional.
 
 🛠 Stuck? Tap Fix my tools (top right).
 💾 Your downloads stay on this computer.
