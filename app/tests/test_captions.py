@@ -110,6 +110,8 @@ def test_subtitles_fast_path_are_valid_formats(tmp_path, monkeypatch):
 def test_failure_falls_back_to_original_audio(tmp_path, monkeypatch, status):
     fake_youtube(monkeypatch, tracks=status != "missing",
                  broken=status == "broken", malformed=status == "malformed")
+    # Both caption strategies are unavailable; only then run local AI.
+    monkeypatch.setattr(captions, "try_alternative_captions", lambda *args: None)
     media = tmp_path / "audio.mp3"
     media.write_bytes(b"test")
     counter = []
