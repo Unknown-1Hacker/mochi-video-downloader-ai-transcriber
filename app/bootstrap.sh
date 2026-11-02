@@ -7,7 +7,7 @@ TOOLS="$STATE/tools"
 UV="$TOOLS/uv"
 PY="$STATE/venv/bin/python"
 mkdir -p "$TOOLS"
-export UV_INSTALL_DIR="$TOOLS" UV_NO_MODIFY_PATH=1 UV_PYTHON_INSTALL_DIR="$STATE/python" UV_CACHE_DIR="$STATE/cache"
+export UV_INSTALL_DIR="$TOOLS" UV_NO_MODIFY_PATH=1 UV_PYTHON_INSTALL_DIR="$STATE/python" UV_CACHE_DIR="$STATE/cache" UV_NO_CACHE=1
 printf '\n  ✦ Mochi is taking care of setup ✦\n\n'
 if [ ! -x "$UV" ]; then
   if command -v uv >/dev/null 2>&1; then UV=$(command -v uv)
@@ -25,7 +25,7 @@ fi
 [ -x "$UV" ] || { echo 'Could not prepare setup helper.' >&2; exit 1; }
 printf '[2/5] Preparing private Python…\n'
 "$UV" venv --python 3.12 "$STATE/venv"
-printf '[3/5] Preparing video and AI tools…\n'
+printf '[3/5] Preparing essential video tools…\n'
 REQ="$HERE/requirements.lock"
 [ -f "$REQ" ] || REQ="$HERE/requirements.txt"
 "$UV" pip install --python "$PY" -r "$REQ"
