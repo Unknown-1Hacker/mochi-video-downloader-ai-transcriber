@@ -467,6 +467,10 @@ def process(url: str, root: Path, output_root: Path, options: dict, update, canc
     results = try_captions(url, root, job_dir, language, mode == 'subtitles', update, cancel)
     if results is None:
         _checkpoint(cancel)
+        from captions import try_alternative_captions
+        results = try_alternative_captions(url, job_dir, language, mode == 'subtitles', update, cancel)
+    if results is None:
+        _checkpoint(cancel)
         update('Captions unavailable. Listening to original audio with local AI…', 10)
         media = _get_audio(url, root, output_root, update, cancel)
         results = recognize(media, job_dir, quality, language, mode == 'subtitles', update, cancel)
