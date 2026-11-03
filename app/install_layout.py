@@ -6,6 +6,7 @@ import sys
 import subprocess
 import plistlib
 import json
+import time
 import urllib.request
 from pathlib import Path
 from mochi_paths import root_dir
@@ -193,6 +194,9 @@ def prepare():
         raise RuntimeError('Mochi is still working. Finish or cancel the current job before upgrading.')
     if NEXT.exists():
         shutil.rmtree(NEXT)
+    # Never race an in-app worker that is still swapping/health-checking.
+    if BACKUP.exists() and _app_update_is_applying():
+        raise RuntimeError('Mochi is finishing an update. Reopen Run Mochi Now shortly.')
     # Heal an interrupted prior upgrade before attempting another one.
     if BACKUP.exists():
         rollback()
@@ -226,6 +230,19 @@ def prepare():
         _write_linux_desktop()
 
 
+def _app_update_is_applying():
+    """A fresh update journal means the detached helper still owns the app."""
+    file = STATE / 'updates' / 'status.json'
+    try:
+        if file.is_symlink() or file.stat().st_size > 4096:
+            return False
+        status = json.loads(file.read_text(encoding='utf-8'))
+        return (status.get('phase') == 'applying' and
+                0 <= time.time() - float(status.get('time', 0)) < 120)
+    except (OSError, ValueError, TypeError):
+        return False
+
+
 def _older_app_is_busy():
     # Protect a live download during an in-place upgrade from an older Mochi.
     try:
@@ -238,7 +255,12 @@ def _older_app_is_busy():
         health=get('/api/health')
         if health.get('ok') is not True:
             return False
-        return get('/api/status').get('state') in ('working','repairing')
+        if get('/api/status').get('state') in ('working', 'repairing'):
+            return True
+        try:
+            return get('/api/update/status').get('phase') in ('downloading', 'staging', 'restarting')
+        except (OSError, ValueError, KeyError, TypeError):
+            return False  # Releases older than v0.3.6 have no updater endpoint.
     except (OSError,ValueError,KeyError,TypeError):
         return False
 
