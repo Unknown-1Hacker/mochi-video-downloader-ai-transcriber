@@ -258,3 +258,60 @@ def test_worker_does_not_recover_during_active_update(tmp_path, monkeypatch):
     update_worker._write_state(tmp_path, "applying", "Update underway")
     assert update_worker.recover(tmp_path) is False
     assert backup.exists()
+
+
+def test_verified_download_success_corruption_and_cancellation(tmp_path, monkeypatch):
+    payload = b"one complete known archive" * 25
+    item = _release(payload=payload)["assets"][0]
+    release = {"download": item["browser_download_url"], "digest": item["digest"][7:],
+               "size": item["size"]}
+    class Opener:
+        def open(self, request, timeout):
+            return io.BytesIO(payload)
+    monkeypatch.setattr(updater.urllib.request, "build_opener", lambda *args: Opener())
+    valid = tmp_path / "verified.part"
+    progressed = []
+    updater._download(release, valid, progressed.append)
+    assert valid.read_bytes() == payload and progressed[-1] == 90
+    corrupt = tmp_path / "corrupt.part"
+    with pytest.raises(updater.UpdateError, match="verification"):
+        updater._download({**release, "digest": "a" * 64}, corrupt, lambda x: None)
+    cancelled = threading.Event()
+    cancelled.set()
+    with pytest.raises(updater.UpdateError, match="cancelled"):
+        updater._download(release, tmp_path / "cancelled.part", lambda x: None, cancelled)
+
+
+def test_recover_does_not_downgrade_successful_update_with_leftover_backup(tmp_path, monkeypatch):
+    live, backup, stage = _worker_root(tmp_path)
+    backup.mkdir()
+    (backup / "sentinel.txt").write_text("old")
+    # A successful update already passed health-check but deletion of the backup
+    # was interrupted. Keep new app, not the outdated backup.
+    for name in update_worker.REQUIRED:
+        file = live / name
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text("new")
+    update_worker._write_state(tmp_path, "updated", "Mochi updated.")
+    monkeypatch.setattr(update_worker, "_server_alive", lambda state: False)
+    assert update_worker.recover(tmp_path)
+    assert (live / "studio.py").read_text() == "new"
+    assert not backup.exists()
+
+
+def test_updater_does_not_reuse_stale_previous_status_for_new_restart(tmp_path):
+    manager = updater.UpdateManager()
+    folder = tmp_path / ".mochi" / "updates"
+    folder.mkdir(parents=True)
+    (folder / "status.json").write_text(json.dumps({
+        "phase": "updated", "message": "A previous version", "time": time.time() - 100,
+    }))
+    manager.started_at = time.time()
+    manager.state = {"phase": "restarting", "message": "Updating the next version", "percent": 98}
+    assert manager.read(tmp_path)["phase"] == "restarting"
+
+
+def test_bookmark_only_uses_private_local_key_never_external_requests():
+    source = (Path(bookmarks.__file__)).read_text(encoding="utf-8")
+    assert "urllib" not in source and "requests" not in source
+    assert "github.com" not in source
