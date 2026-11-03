@@ -393,3 +393,67 @@ def test_transcript_browser_script_parses_when_node_is_available():
     result = subprocess.run([node, '--check', str(js)], capture_output=True,
                             text=True, timeout=15, check=False)
     assert result.returncode == 0, result.stderr
+
+
+def test_updates_private_api_and_beginners_ui(server, monkeypatch):
+    base, key, _ = server
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        request(base, '/api/update/check')
+    assert exc.value.code == 403
+    monkeypatch.setattr(studio.UPDATES, 'check', lambda force=False: {
+        'phase': 'current', 'message': 'Mochi is up to date.', 'latest': 'v0.3.5'})
+    with request(base, '/api/update/check', key) as r:
+        assert json.loads(r.read())['phase'] == 'current'
+    with request(base, '/?key=' + key) as r:
+        page = r.read().decode()
+    for control in ('check-update', 'install-update', 'update-message', 'update-current'):
+        assert 'id="' + control + '"' in page
+    assert 'Bookmark Mochi' in page
+    assert 'Open transcript' in page and 'Copy for AI' in page
+    assert page.count('data-go-settings') == 2
+
+
+def test_update_start_requires_token_and_checks_for_busy_job(server, monkeypatch):
+    base, key, _ = server
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        request(base, '/api/update/start', None, {})
+    assert exc.value.code == 403
+    called = []
+    monkeypatch.setattr(studio.UPDATES, 'start', lambda root, job, serv: called.append(root))
+    with request(base, '/api/update/start', key, {}) as r:
+        assert json.loads(r.read()) == {'ok': True}
+    assert len(called) == 1
+
+
+def test_completed_transcript_reappears_after_studio_restart(tmp_path, monkeypatch):
+    from recent import remember
+    output = tmp_path / '.mochi' / 'Downloads'
+    f = output / 'example' / 'Transcript.txt'
+    f.parent.mkdir(parents=True)
+    f.write_text('Hello world', encoding='utf-8')
+    remember(tmp_path, output, [f])
+    monkeypatch.setattr(studio, 'ROOT', tmp_path)
+    monkeypatch.setattr(studio, 'OUTPUT_DIR', output)
+    restarted = studio.JobState()
+    assert restarted.read()['state'] == 'done'
+    assert restarted.read()['files'] == ['Transcript.txt']
+    assert restarted.read()['folder'] == str(f.parent.resolve())
+
+
+def test_busy_job_rejects_app_upgrade_and_vice_versa(tmp_path, monkeypatch):
+    monkeypatch.setattr(studio, 'ROOT', tmp_path)
+    state = studio.JobState()
+    state.updating = True
+    with pytest.raises(studio.FriendlyError, match='updating'):
+        state.begin('https://youtu.be/MgngwkPAuqQ', {'mode': 'video'})
+    with pytest.raises(studio.FriendlyError, match='updating'):
+        state.repair_tools()
+
+
+def test_frontend_update_javascript_syntax_and_safety():
+    code = (Path(studio.__file__).parent / 'assets' / 'app.js').read_text(encoding='utf-8')
+    assert "api('/api/update/check')" in code
+    assert "api('/api/update/start',{})" in code
+    assert 'window.location.reload()' in code
+    assert "window.location.href='https://github" not in code
+    assert "navigator.clipboard.writeText(text)" in code
