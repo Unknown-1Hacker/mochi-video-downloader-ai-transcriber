@@ -184,6 +184,62 @@ def test_new_ui_uses_real_controls(server):
         page = resp.read().decode()
     assert 'Paste your YouTube link' in page
     assert 'class="sidebar"' in page
-    assert 'data-choose-mode="transcript"' in page
+    assert 'name="mode" value="transcript"' in page
     assert 'data-open-downloads' in page
     assert page.count('id="repair"') == 1
+
+
+def test_sidebar_has_only_three_utilities_and_home_keeps_four_choices(server):
+    """Avoid duplicate mode selectors; retain operational shortcuts."""
+    from html.parser import HTMLParser
+
+    class SidebarReader(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.inside_sidebar = False
+            self.buttons = []
+            self.button_level = 0
+            self.current = None
+        def handle_starttag(self, tag, attrs):
+            attrs = dict(attrs)
+            if tag == 'aside' and 'sidebar' in attrs.get('class', '').split():
+                self.inside_sidebar = True
+            elif self.inside_sidebar and tag == 'button':
+                self.current = attrs
+                self.button_level += 1
+                self.buttons.append(attrs)
+        def handle_endtag(self, tag):
+            if tag == 'button' and self.inside_sidebar and self.button_level:
+                self.button_level -= 1
+                self.current = None
+            elif tag == 'aside' and self.inside_sidebar:
+                self.inside_sidebar = False
+
+    base, token, _ = server
+    with request(base, '/?key=' + token) as resp:
+        page = resp.read().decode()
+    reader = SidebarReader()
+    reader.feed(page)
+    assert len(reader.buttons) == 3
+    assert [b.get('data-go-settings') is not None for b in reader.buttons] == [True, False, False]
+    assert [b.get('data-open-downloads') is not None for b in reader.buttons] == [False, True, False]
+    assert [b.get('data-repair') is not None for b in reader.buttons] == [False, False, True]
+    assert 'data-choose-mode' not in page
+    assert 'data-go-home' not in page
+    for mode in ('video', 'audio', 'subtitles', 'transcript'):
+        assert page.count(f'name="mode" value="{mode}"') == 1
+    # The same tools remain available via the header when mobile hides the sidebar.
+    assert page.count('data-go-settings') == 2
+    assert page.count('data-open-downloads') == 2
+    assert page.count('data-repair') == 1
+    assert page.count('id="repair"') == 1
+
+
+def test_sidebar_javascript_keeps_real_shortcuts_without_removed_handlers():
+    source = (Path(studio.__file__).parent / 'assets' / 'app.js').read_text(encoding='utf-8')
+    assert 'data-go-home' not in source
+    assert 'data-choose-mode' not in source
+    assert "document.querySelectorAll('[name=\"mode\"]')" in source
+    assert "document.querySelectorAll('[data-go-settings]')" in source
+    assert "document.querySelectorAll('[data-repair]')" in source
+    assert "document.querySelectorAll('[data-open-downloads]')" in source
