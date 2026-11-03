@@ -17,7 +17,8 @@ from urllib.parse import parse_qs, urlsplit
 from core import FriendlyError, UserCancelled, check_url, choices, info_for, process
 from doctor import RepairError, is_extractor_problem, repair, remember_fix, recently_failed, restore_downloader, _version
 from guardian import save_pending, load_pending, clear_pending, redact
-from version import APP_VERSION
+from version import APP_VERSION, RELEASE_VERSION
+from updater import UpdateManager, UpdateError
 from mochi_paths import root_dir, app_dir, output_dir
 ROOT = root_dir(__file__)
 STATE_DIR = ROOT / '.mochi'
@@ -33,6 +34,7 @@ class JobState:
         if previous:
             self.data.update(state='interrupted', message='Your last task stopped unexpectedly. Its link is ready to try again.', pending=previous)
         self.active = False
+        self.updating = False
 
     def read(self):
         with self.lock:
@@ -46,6 +48,8 @@ class JobState:
 
     def begin(self, url, options):
         with self.lock:
+            if self.updating:
+                raise FriendlyError('Mochi is updating. Open it again once finished.')
             if self.active:
                 raise FriendlyError('Mochi is finishing a video. Please wait or cancel it first.')
             self.active = True
@@ -59,6 +63,8 @@ class JobState:
 
     def repair_tools(self):
         with self.lock:
+            if self.updating:
+                raise FriendlyError('Mochi is updating. Open it again once finished.')
             if self.active:
                 raise FriendlyError('Mochi is busy. Finish or cancel this job first.')
             self.active = True
@@ -134,6 +140,7 @@ class JobState:
 
 
 JOB = JobState()
+UPDATES = UpdateManager()
 
 # The browser can read only the TXT file produced by the completed job.
 # Keep large transcripts as normal local files rather than sending huge JSON.
@@ -215,6 +222,7 @@ class WebHandler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.send_header('Cache-Control', 'no-store')
             self.send_header('X-Frame-Options', 'DENY')
+            self.send_header('Referrer-Policy', 'no-referrer')
             self.send_header('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
             self.send_header('Content-Length', str(len(data)))
             self.end_headers()
@@ -228,7 +236,13 @@ class WebHandler(BaseHTTPRequestHandler):
                 self._json(200, JOB.read())
         elif path.path == '/api/health':
             if self._authorized():
-                self._json(200, {'ok': True, 'version': APP_VERSION})
+                self._json(200, {'ok': True, 'version': APP_VERSION, 'release_version': RELEASE_VERSION})
+        elif path.path == '/api/update/check':
+            if self._authorized():
+                self._json(200, UPDATES.check(force=True))
+        elif path.path == '/api/update/status':
+            if self._authorized():
+                self._json(200, UPDATES.read(ROOT))
         elif path.path == '/api/transcript':
             if self._authorized():
                 try:
@@ -270,8 +284,8 @@ class WebHandler(BaseHTTPRequestHandler):
                 self._json(200, {'ok': True})
             elif self.path == '/api/qualities':
                 url = check_url(data.get('url', ''))
-                if JOB.active:
-                    raise FriendlyError('Finish or cancel the current video before checking qualities.')
+                if JOB.active or JOB.updating:
+                    raise FriendlyError('Finish the current task or update before checking qualities.')
                 info = info_for(url, ROOT)
                 self._json(200, {'title': info.get('title', 'YouTube video'), 'heights': choices(info)})
             elif self.path == '/api/cancel':
@@ -279,6 +293,12 @@ class WebHandler(BaseHTTPRequestHandler):
                 self._json(200, {'ok': True})
             elif self.path == '/api/repair':
                 JOB.repair_tools()
+                self._json(200, {'ok': True})
+            elif self.path == '/api/update/start':
+                UPDATES.start(ROOT, JOB, self.server)
+                self._json(200, {'ok': True})
+            elif self.path == '/api/update/cancel':
+                UPDATES.cancel_download()
                 self._json(200, {'ok': True})
             elif self.path in ('/api/open', '/api/open-downloads'):
                 if self.path == '/api/open':
@@ -305,7 +325,7 @@ class WebHandler(BaseHTTPRequestHandler):
                 threading.Thread(target=self.server.shutdown, daemon=True).start()
             else:
                 self._json(404, {'error': 'Unknown action.'})
-        except (FriendlyError, ValueError, TypeError, json.JSONDecodeError) as e:
+        except (FriendlyError, UpdateError, ValueError, TypeError, json.JSONDecodeError) as e:
             self._json(400, {'error': str(e)})
         except (OSError, RuntimeError) as e:
             self._json(500, {'error': f'Could not complete that action: {redact(e)}'})
