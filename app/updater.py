@@ -160,14 +160,19 @@ def _safe_stage(archive: Path, target: Path, expected_version: str, current_app:
         raise UpdateError("The update could not be unpacked safely. Please retry.") from exc
 
 
-def _download(release, file_path: Path, progress):
+def _download(release, file_path: Path, progress, cancel=None):
     url = release["download"]
     digest = hashlib.sha256()
     received = 0
+    deadline = time.monotonic() + 300
     opener = urllib.request.build_opener(GitHubOnlyRedirects)
     try:
         with opener.open(_release_request(url), timeout=18) as resp, file_path.open("xb") as output:
             while True:
+                if cancel is not None and cancel.is_set():
+                    raise UpdateError("Update cancelled. Your files are unchanged.")
+                if time.monotonic() > deadline:
+                    raise UpdateError("Update download timed out. Retry when your connection improves.")
                 chunk = resp.read(128 * 1024)
                 if not chunk:
                     break
@@ -189,11 +194,12 @@ class UpdateManager:
         self.state = {"phase": "idle", "message": "", "percent": 0}
         self.cached = None
         self.checked_at = 0
+        self.cancel = threading.Event()
 
     def read(self, root=None):
         with self.lock:
             current = dict(self.state)
-        if current["phase"] != "idle" or root is None:
+        if current["phase"] not in ("idle", "restarting") or root is None:
             return current
         # The detached worker can report an interrupted/rolled-back result
         # after a server restart without relying on stale in-memory state.
@@ -236,6 +242,12 @@ class UpdateManager:
             self._set("offline", str(exc), 0)
             return self.read()
 
+    def cancel_download(self):
+        with self.lock:
+            if self.state["phase"] not in ("downloading", "staging"):
+                raise UpdateError("An update can only be cancelled before restarting.")
+            self.cancel.set()
+
     def start(self, root: Path, job, server):
         with job.lock:
             if job.active or job.updating:
@@ -244,6 +256,7 @@ class UpdateManager:
                 if self.state["phase"] != "available" or not self.cached or not newer(self.cached["version"]):
                     raise UpdateError("Check for a newer release first.")
                 release = dict(self.cached)
+                self.cancel.clear()
                 self.state = {"phase": "downloading", "message": "Downloading the verified update…", "percent": 0}
                 job.updating = True
         threading.Thread(target=self._work, args=(Path(root), release, job, server), daemon=True).start()
@@ -259,9 +272,15 @@ class UpdateManager:
                 raise UpdateError("Update folder is unsafe. Please reinstall manually.")
             if archive.exists():
                 archive.unlink()
-            _download(release, archive, lambda value: self._set("downloading", "Downloading…", value))
+            if shutil.disk_usage(updates).free < release["size"] * 5 + 20 * 1024 * 1024:
+                raise UpdateError("Not enough free disk space to update. Clear space and retry.")
+            _download(release, archive, lambda value: self._set("downloading", "Downloading…", value), self.cancel)
+            if self.cancel.is_set():
+                raise UpdateError("Update cancelled. Your current Mochi is unchanged.")
             self._set("staging", "Checking the new Mochi files…", 92)
             _safe_stage(archive, target, release["version"], app_dir(root))
+            if self.cancel.is_set():
+                raise UpdateError("Update cancelled. Your current Mochi is unchanged.")
             archive.unlink(missing_ok=True)
             # The running server must exit before the worker can swap app files.
             worker = updates / "update_worker.py"
