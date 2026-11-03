@@ -18,6 +18,9 @@ from core import FriendlyError, UserCancelled, check_url, choices, info_for, pro
 from doctor import RepairError, is_extractor_problem, repair, remember_fix, recently_failed, restore_downloader, _version
 from guardian import save_pending, load_pending, clear_pending, redact
 from version import APP_VERSION
+from bookmarks import preferred_port, private_key
+from recent import restore as restore_transcript, remember as remember_transcript
+from updater import UpdateManager, UpdateError
 from mochi_paths import root_dir, app_dir, output_dir
 ROOT = root_dir(__file__)
 STATE_DIR = ROOT / '.mochi'
@@ -32,7 +35,12 @@ class JobState:
         previous = load_pending(ROOT)
         if previous:
             self.data.update(state='interrupted', message='Your last task stopped unexpectedly. Its link is ready to try again.', pending=previous)
+        else:
+            restored = restore_transcript(ROOT, OUTPUT_DIR)
+            if restored:
+                self.data = restored
         self.active = False
+        self.updating = False
 
     def read(self):
         with self.lock:
@@ -46,6 +54,8 @@ class JobState:
 
     def begin(self, url, options):
         with self.lock:
+            if self.updating:
+                raise FriendlyError('Mochi is updating. Reopen it when the update finishes.')
             if self.active:
                 raise FriendlyError('Mochi is finishing a video. Please wait or cancel it first.')
             self.active = True
@@ -59,6 +69,8 @@ class JobState:
 
     def repair_tools(self):
         with self.lock:
+            if self.updating:
+                raise FriendlyError('Mochi is updating. Reopen it when the update finishes.')
             if self.active:
                 raise FriendlyError('Mochi is busy. Finish or cancel this job first.')
             self.active = True
@@ -115,6 +127,7 @@ class JobState:
                     raise
                 remember_fix(ROOT, 'extractor', 'update_downloader', True)
             folder = str(files[0].parent)
+            remember_transcript(ROOT, OUTPUT_DIR, files)
             self.update('All done! Your files are ready 💜', 100, state='done', files=[p.name for p in files], folder=folder)
         except UserCancelled:
             self.update('Cancelled. You can start another video.', 0, state='cancelled')
@@ -134,6 +147,7 @@ class JobState:
 
 
 JOB = JobState()
+UPDATES = UpdateManager()
 
 # The browser can read only the TXT file produced by the completed job.
 # Keep large transcripts as normal local files rather than sending huge JSON.
@@ -214,6 +228,7 @@ class WebHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.send_header('Cache-Control', 'no-store')
+            self.send_header('Referrer-Policy', 'no-referrer')
             self.send_header('X-Frame-Options', 'DENY')
             self.send_header('Content-Security-Policy', "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
             self.send_header('Content-Length', str(len(data)))
@@ -228,7 +243,14 @@ class WebHandler(BaseHTTPRequestHandler):
                 self._json(200, JOB.read())
         elif path.path == '/api/health':
             if self._authorized():
-                self._json(200, {'ok': True, 'version': APP_VERSION})
+                self._json(200, {'ok': True, 'version': APP_VERSION,
+                                 'bookmark_stable': getattr(self.server, 'bookmark_stable', False)})
+        elif path.path == '/api/update/check':
+            if self._authorized():
+                self._json(200, UPDATES.check(force=True))
+        elif path.path == '/api/update/status':
+            if self._authorized():
+                self._json(200, UPDATES.read())
         elif path.path == '/api/transcript':
             if self._authorized():
                 try:
@@ -280,6 +302,9 @@ class WebHandler(BaseHTTPRequestHandler):
             elif self.path == '/api/repair':
                 JOB.repair_tools()
                 self._json(200, {'ok': True})
+            elif self.path == '/api/update/start':
+                UPDATES.start(ROOT, JOB, self.server)
+                self._json(200, {'ok': True})
             elif self.path in ('/api/open', '/api/open-downloads'):
                 if self.path == '/api/open':
                     if JOB.read().get('state') != 'done':
@@ -305,7 +330,7 @@ class WebHandler(BaseHTTPRequestHandler):
                 threading.Thread(target=self.server.shutdown, daemon=True).start()
             else:
                 self._json(404, {'error': 'Unknown action.'})
-        except (FriendlyError, ValueError, TypeError, json.JSONDecodeError) as e:
+        except (FriendlyError, UpdateError, ValueError, TypeError, json.JSONDecodeError) as e:
             self._json(400, {'error': str(e)})
         except (OSError, RuntimeError) as e:
             self._json(500, {'error': f'Could not complete that action: {redact(e)}'})
@@ -314,9 +339,15 @@ class WebHandler(BaseHTTPRequestHandler):
 def serve():
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    server = ThreadingHTTPServer(('127.0.0.1', 0), WebHandler)
+    stable = True
+    try:
+        server = ThreadingHTTPServer(('127.0.0.1', preferred_port(ROOT)), WebHandler)
+    except OSError:
+        stable = False
+        server = ThreadingHTTPServer(('127.0.0.1', 0), WebHandler)
     server.daemon_threads = True
-    server.secret = secrets.token_urlsafe(32)
+    server.secret = private_key(ROOT)
+    server.bookmark_stable = stable
     port = server.server_address[1]
     path = STATE_DIR / 'server.json'
     path.write_text(json.dumps({'port': port, 'key': server.secret, 'pid': os.getpid()}), encoding='utf-8')
