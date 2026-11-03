@@ -1,5 +1,6 @@
 """Keep public docs aligned with the working Mochi browser studio."""
 from pathlib import Path
+from xml.etree import ElementTree
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -22,6 +23,36 @@ def test_readme_shows_real_current_ui_and_completed_transcript():
             assert img.format == "WEBP"
             assert img.width >= 800 and img.height >= 180
             img.verify()
+
+
+
+def test_visual_workflow_is_readable_responsive_and_not_a_mock_ui():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert '<picture>' in readme
+    assert 'media="(max-width: 700px)"' in readme
+    assert 'srcset="docs/mochi-how-it-works-mobile.svg"' in readme
+    assert 'src="docs/mochi-how-it-works.svg"' in readme
+    assert "Illustrated workflow" in readme
+    assert 'docs/mochi-interface.webp' in readme
+    for name, width in (("mochi-how-it-works.svg", "1280"),
+                        ("mochi-how-it-works-mobile.svg", "720")):
+        file = ROOT / "docs" / name
+        assert file.is_file()
+        svg = ElementTree.parse(file).getroot()
+        assert svg.attrib["width"] == width
+        assert svg.attrib["role"] == "img"
+        assert svg.attrib.get("aria-label")
+        text = " ".join(svg.itertext())
+        for word in ("yt-dlp", "FFmpeg", "youtube-transcript-api",
+                     "faster-whisper", "Subtitles.srt", "Transcript.txt"):
+            assert word in text, (name, word)
+        assert not any(element.tag.rsplit("}", 1)[-1] in
+                       ("script", "foreignObject") for element in svg.iter())
+        assert not any(key.endswith("href") for element in svg.iter()
+                       for key in element.attrib)
+    workflow = (ROOT / ".github/workflows/docs-screenshots.yml").read_text(encoding="utf-8")
+    assert "git add docs/mochi-how-it-works.svg" not in workflow
+    assert "git add docs/mochi-how-it-works-mobile.svg" not in workflow
 
 
 def test_documentation_does_not_promise_unreleased_updater_or_bookmark_support():
