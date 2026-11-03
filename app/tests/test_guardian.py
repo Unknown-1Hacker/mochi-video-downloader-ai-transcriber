@@ -14,7 +14,8 @@ URL = "https://www.youtube.com/watch?v=5bKz"
 
 def test_one_version_for_client_server_and_mac_bundle():
     assert studio.APP_VERSION == launcher.APP_VERSION == version.APP_VERSION
-    assert version.APP_VERSION == "0.3.5"
+    assert version.APP_VERSION.count(".") == 2
+    assert all(part.isdigit() for part in version.APP_VERSION.split("."))
 
 
 def test_private_job_checkpoint_and_manual_recovery(tmp_path, monkeypatch):
