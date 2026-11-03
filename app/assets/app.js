@@ -144,6 +144,80 @@ async function refresh(){
     if(done){const container=el('file-list');container.replaceChildren();for(const item of st.files){const span=document.createElement('span');span.textContent='📄 '+item;container.appendChild(span)}}
   }catch(err){if(busy){el('status-text').textContent='App connection was lost. Double-click Run Mochi Now to reconnect.';busy=false;el('start').disabled=false}}
 }
+// New versions are checked locally through Mochi's authenticated server.
+// Never send the browser's private key or transcripts to GitHub.
+let updatePhase='idle', updateTarget='', waitingForUpgrade=false, checkingUpdate=false;
+const updateLabel=el('update-message');
+function updateView(state){
+  updatePhase=state.phase||'idle';
+  updateLabel.textContent=state.message||'Your files stay on this computer.';
+  if(state.current)el('update-current').textContent='Installed '+state.current;
+  if(state.latest)updateTarget=state.latest;
+  el('install-update').classList.toggle('hidden',updatePhase!=='available');
+  const inProgress=['downloading','staging','restarting'].includes(updatePhase);
+  el('check-update').disabled=inProgress||checkingUpdate;
+  el('install-update').disabled=inProgress||checkingUpdate;
+  if(inProgress&&Number.isFinite(state.percent)){
+    updateLabel.textContent=(state.message||'Updating…')+' '+state.percent+'%';
+  }
+}
+async function checkForUpdate(){
+  if(checkingUpdate||['downloading','staging','restarting'].includes(updatePhase))return;
+  checkingUpdate=true;el('check-update').disabled=true;
+  updateLabel.textContent='Checking Mochi releases…';
+  try{updateView(await api('/api/update/check'))}
+  catch(err){updateLabel.textContent='Could not check updates. Try again when online.'}
+  finally{checkingUpdate=false;el('check-update').disabled=false}
+}
+el('check-update').addEventListener('click',checkForUpdate);
+el('install-update').addEventListener('click',async()=>{
+  if(updatePhase!=='available')return;
+  try{
+    await api('/api/update/start',{});
+    updateView({phase:'downloading',message:'Preparing your update safely…',percent:0});
+  }catch(err){updateLabel.textContent=err.message}
+});
+async function watchUpgrade(){
+  if(waitingForUpgrade)return;
+  waitingForUpgrade=true;
+  for(let i=0;i<60;i++){
+    await new Promise(resolve=>setTimeout(resolve,1500));
+    try{
+      const health=await api('/api/health');
+      if(updateTarget&&health.version===''+updateTarget.replace(/^v/,'')){
+        window.location.reload();
+        return;
+      }
+      const st=await api('/api/update/status');
+      if(['failed','rolled-back','error'].includes(st.phase)){
+        updateLabel.textContent=st.message||'Update was not completed. Your files are safe.';
+        waitingForUpgrade=false;
+        return;
+      }
+    }catch(err){/* Server is restarting; try the same private loopback URL. */}
+  }
+  updateLabel.textContent='Could not reconnect. Open Run Mochi Now to recover or retry.';
+  waitingForUpgrade=false;
+}
+async function pollUpdate(){
+  if(!['downloading','staging','restarting'].includes(updatePhase))return;
+  try{
+    const state=await api('/api/update/status');
+    updateView(state);
+    if(state.phase==='restarting')watchUpgrade();
+  }catch(err){if(updatePhase==='restarting')watchUpgrade()}
+}
+async function bookmarkInfo(){
+  try{
+    const health=await api('/api/health');
+    el('update-current').textContent='Installed v'+health.version;
+    if(!health.bookmark_stable){
+      const hint=document.querySelector('.bookmark-help small');
+      if(hint)hint.textContent='A temporary local port is being used. Use Run Mochi Now to reconnect after restarting.';
+    }
+  }catch(err){}
+}
 selectedMode();refresh();setInterval(refresh,850);
+bookmarkInfo();checkForUpdate();setInterval(pollUpdate,1500);
 
 
