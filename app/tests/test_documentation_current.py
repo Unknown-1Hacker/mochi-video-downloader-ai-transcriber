@@ -57,5 +57,5 @@ def test_setup_guide_preserves_approved_mascot_artwork():
     workflow = (ROOT / ".github/workflows/docs-screenshots.yml").read_text(encoding="utf-8")
     assert "capture_setup_guide(browser)" not in script
     assert "def guide_html(" not in script
-    assert "git add docs/mochi-interface.webp docs/mochi-transcript-result.webp\\n" in workflow
+    assert "git add docs/mochi-interface.webp docs/mochi-transcript-result.webp" in workflow
     assert "git add docs/mochi-interface.webp docs/mochi-transcript-result.webp docs/mochi-first-time-vs-next-time.webp" not in workflow
