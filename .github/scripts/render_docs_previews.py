@@ -80,11 +80,39 @@ def capture_actual_ui(browser) -> None:
         sidebar = page.locator("aside.sidebar").inner_text()
         assert "Check for updates" in sidebar
         assert "Settings" not in sidebar
-        assert page.locator("[data-check-updates]").count() == 2
+        assert page.locator("[data-check-updates]").count() == 1
+        assert page.locator("[data-open-downloads]").count() == 1
+        assert page.locator("aside.sidebar #repair").count() == 1
+        assert page.locator("nav.top-actions").count() == 0
         assert page.locator("#update-dialog").count() == 1
         assert page.locator("label.choice").count() == 4
         assert "Full video" not in sidebar
         save_webp(page, "mochi-interface.webp")
+
+        # One set of tools also stays available on narrow screens.
+        for width in (768, 390, 320):
+            page.set_viewport_size({"width": width, "height": 900})
+            assert page.locator("aside.sidebar").is_visible()
+            for button in ("[data-check-updates]", "[data-open-downloads]", "#repair"):
+                assert page.locator("aside.sidebar " + button).is_visible()
+            assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+            page.locator("aside.sidebar [data-check-updates]").click()
+            page.locator("#update-dialog").wait_for(state="visible", timeout=5000)
+            page.locator("#close-updates").click()
+            assert not page.locator("#update-dialog").is_visible()
+
+        # Confirm Downloads and Fix my tools still call their normal local APIs.
+        page.route("**/api/open-downloads", lambda route: route.fulfill(
+            status=200, content_type="application/json", body='{"ok":true}'
+        ))
+        with page.expect_request("**/api/open-downloads"):
+            page.locator("aside.sidebar [data-open-downloads]").click()
+        page.route("**/api/repair", lambda route: route.fulfill(
+            status=200, content_type="application/json", body='{"ok":true}'
+        ))
+        with page.expect_request("**/api/repair"):
+            page.locator("aside.sidebar #repair").click()
+        page.set_viewport_size({"width": 1440, "height": 1000})
 
         page.locator('label.choice:has(input[value="transcript"])').click()
         folder = studio.OUTPUT_DIR / "Mochi sample - demo"

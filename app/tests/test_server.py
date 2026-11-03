@@ -228,16 +228,17 @@ def test_sidebar_has_only_three_utilities_and_home_keeps_four_choices(server):
     assert len(reader.buttons) == 3
     assert ['data-check-updates' in b for b in reader.buttons] == [True, False, False]
     assert ['data-open-downloads' in b for b in reader.buttons] == [False, True, False]
-    assert ['data-repair' in b for b in reader.buttons] == [False, False, True]
+    assert [b.get('id') == 'repair' for b in reader.buttons] == [False, False, True]
     assert 'data-choose-mode' not in page
     assert 'data-go-home' not in page
     for mode in ('video', 'audio', 'subtitles', 'transcript'):
         assert page.count(f'name="mode" value="{mode}"') == 1
-    # The same tools remain available via the header when mobile hides the sidebar.
-    assert page.count('data-check-updates') == 2
+    # Exactly one utility button per function on every screen size.
+    assert '<nav class="top-actions"' not in page
+    assert page.count('data-check-updates') == 1
     assert 'data-go-settings' not in page
-    assert page.count('data-open-downloads') == 2
-    assert page.count('data-repair') == 1
+    assert page.count('data-open-downloads') == 1
+    assert 'data-repair' not in page
     assert page.count('id="repair"') == 1
 
 
@@ -247,7 +248,8 @@ def test_sidebar_javascript_keeps_real_shortcuts_without_removed_handlers():
     assert 'data-choose-mode' not in source
     assert "document.querySelectorAll('[name=\"mode\"]')" in source
     assert "document.querySelectorAll('[data-check-updates]')" in source
-    assert "document.querySelectorAll('[data-repair]')" in source
+    assert "el('repair').addEventListener('click'" in source
+    assert "document.querySelectorAll('[data-repair]')" not in source
     assert "document.querySelectorAll('[data-open-downloads]')" in source
 
 

@@ -23,8 +23,7 @@ function selectedMode(){
   el('language-options').classList.toggle('hidden',!speech);
 }
 document.querySelectorAll('[name="mode"]').forEach(node=>node.addEventListener('change',selectedMode));
-// Sidebar and mobile header share the same working utilities.
-document.querySelectorAll('[data-repair]').forEach(button=>button.addEventListener('click',()=>el('repair').click()));
+// Each utility has one working control in the responsive sidebar.
 document.querySelectorAll('[data-open-downloads]').forEach(button=>button.addEventListener('click',async()=>{
   try{await api('/api/open-downloads',{})}catch(e){note(e.message)}
 }));
