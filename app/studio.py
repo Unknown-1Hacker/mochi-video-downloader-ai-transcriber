@@ -160,7 +160,9 @@ def completed_transcript_text() -> str:
             raise FriendlyError('Transcript is too large to show here. Open the folder and upload the TXT file to your AI.')
         if not content:
             raise FriendlyError('Transcript is empty. Open the folder to check the file.')
-        return content.decode('utf-8')
+        # Normalize platform-specific line breaks for clean AI-chat paste.
+        # The original TXT on disk remains untouched.
+        return content.decode('utf-8').replace('\r\n', '\n').replace('\r', '\n')
     except (OSError, UnicodeError) as exc:
         raise FriendlyError('Could not read the saved transcript. Open the folder to check it.') from exc
 
