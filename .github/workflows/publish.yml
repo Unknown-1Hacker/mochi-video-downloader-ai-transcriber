@@ -37,6 +37,10 @@ jobs:
               f"Refusing mismatched tag: expected {expected}"
           )
           PY
+      - name: 📝 Require real notes for the new version
+        env:
+          VERSION: ${{ inputs.version || 'v0.3.7' }}
+        run: python .github/scripts/release_notes.py render "$VERSION" >/dev/null
       - name: 🧪 Check Mochi before release
         run: |
           sudo apt-get update -qq
