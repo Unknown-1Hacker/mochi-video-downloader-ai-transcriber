@@ -186,7 +186,14 @@ def main():
     try:
         install(root, version)
     except Exception as exc:
-        _write_state(root, "failed", "Update could not finish. Use Run Mochi Now to recover.")
+        status = root / ".mochi" / "updates" / "status.json"
+        try:
+            previous = json.loads(status.read_text(encoding="utf-8"))
+            restored = previous.get("phase") == "rolled-back"
+        except (OSError, ValueError, TypeError):
+            restored = False
+        if not restored:
+            _write_state(root, "failed", "Update could not finish. Use Run Mochi Now to recover.")
         print("Update failed:", type(exc).__name__, str(exc), file=sys.stderr)
         raise SystemExit(1) from exc
 
