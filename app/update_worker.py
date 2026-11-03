@@ -59,6 +59,15 @@ def recover(root):
         status = json.loads(status_file.read_text(encoding="utf-8"))
         if status.get("phase") == "applying" and time.time() - float(status.get("time", 0)) < 120:
             return False
+        if status.get("phase") == "updated" and live.is_dir() and not live.is_symlink():
+            # Successful update with interrupted *cleanup*: keep the verified
+            # new app, never incorrectly roll it back merely due to a backup.
+            if all((live / name).is_file() for name in REQUIRED):
+                try:
+                    shutil.rmtree(backup)
+                except OSError:
+                    pass
+                return True
     except (OSError, ValueError, TypeError):
         pass
     if _server_alive(state):
