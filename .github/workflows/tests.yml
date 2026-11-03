@@ -44,5 +44,11 @@ jobs:
           python -m pip install uv
           uv pip compile --universal --python-version 3.12 app/requirements.txt -o /tmp/requirements.lock
           uv pip compile --universal --python-version 3.12 app/requirements-ai.txt -o /tmp/requirements-ai.lock
+      - name: Test actual browser controls (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          python -m pip install playwright
+          python -m playwright install chromium
+          python .github/scripts/render_docs_previews.py
       - name: Compile source
         run: python -m compileall -q app
