@@ -154,6 +154,8 @@ function updateView(state){
   if(state.current)el('update-current').textContent='Installed '+state.current;
   if(state.latest)updateTarget=state.latest;
   el('install-update').classList.toggle('hidden',updatePhase!=='available');
+  el('cancel-update').classList.toggle('hidden',!['downloading','staging'].includes(updatePhase));
+  if(!['downloading','staging'].includes(updatePhase))el('cancel-update').disabled=false;
   const inProgress=['downloading','staging','restarting'].includes(updatePhase);
   el('check-update').disabled=inProgress||checkingUpdate;
   el('install-update').disabled=inProgress||checkingUpdate;
@@ -175,6 +177,13 @@ el('install-update').addEventListener('click',async()=>{
   try{
     await api('/api/update/start',{});
     updateView({phase:'downloading',message:'Preparing your update safely…',percent:0});
+  }catch(err){updateLabel.textContent=err.message}
+});
+el('cancel-update').addEventListener('click',async()=>{
+  try{
+    await api('/api/update/cancel',{});
+    el('cancel-update').disabled=true;
+    updateLabel.textContent='Stopping the update safely…';
   }catch(err){updateLabel.textContent=err.message}
 });
 async function watchUpgrade(){
