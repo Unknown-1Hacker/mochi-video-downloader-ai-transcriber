@@ -10,7 +10,7 @@ on:
       version:
         description: Release version (for example, v0.2.0)
         required: true
-        default: v0.3.6
+        default: v0.3.7
         type: string
 
 permissions:
@@ -30,7 +30,7 @@ jobs:
           python-version: '3.12'
       - name: 🧭 Confirm public release version matches bundled app
         env:
-          VERSION: ${{ inputs.version || 'v0.3.6' }}
+          VERSION: ${{ inputs.version || 'v0.3.7' }}
         run: |
           python - <<'PY'
           import os
@@ -143,9 +143,9 @@ jobs:
 
           📝 After creating a transcript, open it inside Mochi, copy the text for ChatGPT, Claude or any AI, or open the saved folder. No automatic sharing.
 
-          🔄 **New: Check for updates** in Mochi's sidebar (or the mobile header). It checks the official stable GitHub release only when you choose; newer versions offer **Update now**. The update ZIP is verified before the app switches; saved media and AI models are kept. No account or automatic upload.
+          🔄 **Check for updates:** Find it in the desktop sidebar or the same tool row on mobile. New official releases offer **Update now** after your approval, with ZIP verification and recovery if a restart fails.
 
-          ✨ **Less clutter:** Settings remain alongside the quality/language choices. Sidebar: **Check for updates**, **Downloads**, **Fix my tools**.
+          ✨ **Clearer at a glance:** No duplicate buttons in the top bar. One set of tools — **Check for updates · Downloads · Fix my tools** — stays in the sidebar, and becomes a compact row on phones. Quality/language options remain beside your choices.
 
           ⚡ Tries two independent methods to get existing YouTube captions. Only if both fail does it download audio and prepare local AI. No paid transcript service.
 
@@ -161,7 +161,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          VERSION: ${{ inputs.version || 'v0.3.6' }}
+          VERSION: ${{ inputs.version || 'v0.3.7' }}
         run: |
           if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo 'Expected a version such as v0.1.0'
