@@ -52,3 +52,5 @@ jobs:
           python .github/scripts/render_docs_previews.py
       - name: Compile source
         run: python -m compileall -q app
+      - name: Check readable release notes
+        run: python .github/scripts/release_notes.py check

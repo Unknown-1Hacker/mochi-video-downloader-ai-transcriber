@@ -1,0 +1,33 @@
+name: 🧹 Keep GitHub Releases clear
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/scripts/release_notes.py
+      - .github/workflows/tidy-releases.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mochi-release-descriptions
+  cancel-in-progress: false
+
+jobs:
+  tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: ✅ Validate every concise note
+        run: python .github/scripts/release_notes.py check
+      - name: ✨ Shorten only release descriptions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python .github/scripts/release_notes.py sync
