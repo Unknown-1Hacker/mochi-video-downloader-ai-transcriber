@@ -112,8 +112,8 @@ def _safe_stage(archive: Path, target: Path, expected_version: str, current_app:
     try:
         with zipfile.ZipFile(archive) as z:
             members = z.infolist()
-            if not members or len(members) > MAX_ENTRIES or z.testzip() is not None:
-                raise UpdateError("The update ZIP is incomplete or damaged.")
+            if not members or len(members) > MAX_ENTRIES:
+                raise UpdateError("The update ZIP is incomplete or unusually large.")
             for member in members:
                 name = member.filename
                 if name.endswith("/"):
@@ -221,13 +221,15 @@ class UpdateManager:
             return self.read()
 
     def start(self, root: Path, job, server):
-        with self.lock:
-            if job.active:
+        with job.lock:
+            if job.active or job.updating:
                 raise UpdateError("Finish or cancel your current task before updating.")
-            if self.state["phase"] != "available" or not self.cached or not newer(self.cached["version"]):
-                raise UpdateError("Check for a newer release first.")
-            release = dict(self.cached)
-            self.state = {"phase": "downloading", "message": "Downloading the verified update…", "percent": 0}
+            with self.lock:
+                if self.state["phase"] != "available" or not self.cached or not newer(self.cached["version"]):
+                    raise UpdateError("Check for a newer release first.")
+                release = dict(self.cached)
+                self.state = {"phase": "downloading", "message": "Downloading the verified update…", "percent": 0}
+                job.updating = True
         threading.Thread(target=self._work, args=(Path(root), release, job, server), daemon=True).start()
 
     def _work(self, root: Path, release: dict, job, server):
@@ -242,19 +244,13 @@ class UpdateManager:
             if archive.exists():
                 archive.unlink()
             _download(release, archive, lambda value: self._set("downloading", "Downloading…", value))
-            with self.lock:
-                if job.active:
-                    raise UpdateError("A task started during the update. Try again when it finishes.")
-                self._set("staging", "Checking the new Mochi files…", 92)
+            self._set("staging", "Checking the new Mochi files…", 92)
             _safe_stage(archive, target, release["version"], app_dir(root))
             archive.unlink(missing_ok=True)
             # The running server must exit before the worker can swap app files.
             worker = updates / "update_worker.py"
             shutil.copy2(app_dir(root) / "update_worker.py", worker)
-            with self.lock:
-                if job.active:
-                    raise UpdateError("A task started during the update. Try again after it finishes.")
-                self._set("restarting", "Restarting Mochi safely…", 98)
+            self._set("restarting", "Restarting Mochi safely…", 98)
             log = updates / "update.log"
             with log.open("a", encoding="utf-8") as f:
                 opts = {"stdin": subprocess.DEVNULL, "stdout": f, "stderr": f, "cwd": str(root)}
@@ -268,7 +264,9 @@ class UpdateManager:
                 time.sleep(1)
                 server.shutdown()
             threading.Thread(target=stop, daemon=True).start()
-        except (UpdateError, OSError, ValueError, shutil.Error) as exc:
+        except (UpdateError, OSError, ValueError, shutil.Error, subprocess.SubprocessError) as exc:
+            with job.lock:
+                job.updating = False
             self._set("error", str(exc) if isinstance(exc, UpdateError)
                       else "Could not finish the update. Your original Mochi is unchanged.", 0)
             try:
