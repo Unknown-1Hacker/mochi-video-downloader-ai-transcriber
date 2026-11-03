@@ -10,7 +10,7 @@ on:
       version:
         description: Release version (for example, v0.2.0)
         required: true
-        default: v0.3.4
+        default: v0.3.5
         type: string
 
 permissions:
@@ -129,7 +129,9 @@ jobs:
           2. Extract it, then open the **Install-Mochi** launcher for your OS (Windows / Mac / Linux).
           3. Paste a link → pick what you want → **Make it happen!**
 
-          📝 **New:** After creating a transcript, open it inside Mochi, copy the text for ChatGPT, Claude or any AI, or open the saved folder. No automatic sharing.
+          📝 After creating a transcript, open it inside Mochi, copy the text for ChatGPT, Claude or any AI, or open the saved folder. No automatic sharing.
+
+          📖 **Documentation refresh:** Current Home and transcript screenshots, clearer OS install guide, and short corrected quick-start notes.
 
           ✨ Cleaner studio: pick video, audio, subtitles, or transcript on Home. Sidebar is now for Settings, Downloads, and Fix my tools.
 
@@ -139,13 +141,15 @@ jobs:
 
           🛠 **Something stuck?** Tap **Fix my tools**. Your OS may still ask you to approve the launcher.
 
+          🔄 **Updating today:** Extract the latest ZIP into your existing Mochi folder without deleting `.mochi`, then run the Install-Mochi launcher again. In-app updates and persistent browser bookmarks are planned, not available yet.
+
           💜 Made with love by **[1Hack](https://onehack.st/)**
           MD
       - name: 🚀 Publish one download
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          VERSION: ${{ inputs.version || 'v0.3.4' }}
+          VERSION: ${{ inputs.version || 'v0.3.5' }}
         run: |
           if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo 'Expected a version such as v0.1.0'
