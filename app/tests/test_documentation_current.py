@@ -49,3 +49,13 @@ def test_preview_generator_is_reusable_without_publishing_fake_features():
     assert "capture_actual_ui" in script
     assert "This example uses demonstration text" in script
     assert "open-transcript" in script and "copy-transcript" in script
+
+
+def test_setup_guide_preserves_approved_mascot_artwork():
+    """Automatic UI screenshots must never overwrite the curated bunny guide."""
+    script = (ROOT / ".github/scripts/render_docs_previews.py").read_text(encoding="utf-8")
+    workflow = (ROOT / ".github/workflows/docs-screenshots.yml").read_text(encoding="utf-8")
+    assert "capture_setup_guide(browser)" not in script
+    assert "def guide_html(" not in script
+    assert "git add docs/mochi-interface.webp docs/mochi-transcript-result.webp" in workflow
+    assert "git add docs/mochi-interface.webp docs/mochi-transcript-result.webp docs/mochi-first-time-vs-next-time.webp" not in workflow

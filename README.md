@@ -67,7 +67,7 @@ No paid transcription service or account required. AI is downloaded only when ne
 **First time:** `Install-Mochi` for your OS &nbsp; → &nbsp; **Next time:** `Run Mochi Now`.
 
 <p align="center">
-  <img src="docs/mochi-first-time-vs-next-time.webp" width="940" alt="Mochi setup guide for Windows, macOS and Linux: use the Install-Mochi file for first-time setup, then Run Mochi Now for everyday use. Keep the hidden .mochi folder." />
+  <img src="docs/mochi-first-time-vs-next-time.webp" width="940" alt="Mochi bunny setup guide with folder windows for Windows, macOS and Linux: run the OS-specific Install-Mochi file first, then use Run Mochi Now; on Linux, allow launching if prompted. Keep the hidden .mochi folder." />
 </p>
 
 <sub>Folder appearance varies by OS. The hidden `.mochi` folder is created during setup. First setup requires internet.</sub>
