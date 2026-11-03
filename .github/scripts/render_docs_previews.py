@@ -65,6 +65,17 @@ def capture_actual_ui(browser) -> None:
         page.locator(".hero-bunny img").evaluate(
             "(image) => image.decode()"
         )
+        # Exercise the actual sidebar button without contacting GitHub.
+        page.route("**/api/update/check", lambda route: route.fulfill(
+            status=200, content_type="application/json",
+            body='{"phase":"available","message":"A newer Mochi release is ready.","current":"v0.3.6","latest":"v0.3.7","percent":0}'
+        ))
+        page.locator("aside.sidebar [data-check-updates]").click()
+        page.locator("#update-dialog").wait_for(state="visible", timeout=5000)
+        assert page.locator("#install-update").is_visible()
+        assert "v0.3.7" in page.locator("#update-versions").inner_text()
+        page.locator("#close-updates").click()
+        assert not page.locator("#update-dialog").is_visible()
         assert page.locator("aside.sidebar .side-link").count() == 3
         sidebar = page.locator("aside.sidebar").inner_text()
         assert "Check for updates" in sidebar
