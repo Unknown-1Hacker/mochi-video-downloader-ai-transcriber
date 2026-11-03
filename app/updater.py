@@ -194,6 +194,7 @@ class UpdateManager:
         self.state = {"phase": "idle", "message": "", "percent": 0}
         self.cached = None
         self.checked_at = 0
+        self.started_at = 0
         self.cancel = threading.Event()
 
     def read(self, root=None):
@@ -208,8 +209,11 @@ class UpdateManager:
             if file.is_symlink() or file.stat().st_size > 4096:
                 return current
             saved = json.loads(file.read_text(encoding="utf-8"))
+            stamp = float(saved.get("time", 0))
+            if (current["phase"] == "restarting" and stamp < self.started_at):
+                return current
             if (saved.get("phase") in ("updated", "rolled-back", "failed")
-                    and time.time() - float(saved.get("time", 0)) < 3600):
+                    and 0 <= time.time() - stamp < 3600):
                 return {"phase": saved["phase"], "message": str(saved.get("message", ""))[:240],
                         "percent": 100 if saved["phase"] == "updated" else 0}
         except (OSError, ValueError, TypeError):
@@ -257,6 +261,7 @@ class UpdateManager:
                     raise UpdateError("Check for a newer release first.")
                 release = dict(self.cached)
                 self.cancel.clear()
+                self.started_at = time.time()
                 self.state = {"phase": "downloading", "message": "Downloading the verified update…", "percent": 0}
                 job.updating = True
         threading.Thread(target=self._work, args=(Path(root), release, job, server), daemon=True).start()
