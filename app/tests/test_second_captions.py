@@ -149,7 +149,8 @@ def test_cancel_during_secondary_fetch_never_saves_files(tmp_path, monkeypatch):
     assert not list(tmp_path.glob("Subtitles.*"))
 
 
-def test_no_unauthorized_hosted_site_scraping():
+def test_second_caption_reader_uses_direct_youtube_api():
     source = open(captions.__file__, encoding="utf-8").read()
-    assert "freeyoutubetranscribe.com" not in source
-    assert "yoututranscript.com" not in source
+    assert "YouTubeTranscriptApi" in source
+    assert "TimedSession" in source
+    assert "http://" not in source and "https://" not in source
