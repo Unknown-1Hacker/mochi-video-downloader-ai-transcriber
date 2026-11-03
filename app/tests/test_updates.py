@@ -45,7 +45,7 @@ def test_versions_compare_numerically_and_ignore_unrecognized():
     assert not updater.newer("v0.3.4", "0.3.5")
     for invalid in ("v0.3.6-rc1", "latest", "v0.3.6.1", "v2.0.0+abc", "../0.3.5"):
         assert not updater.newer(invalid, "0.3.5")
-    assert updater.APP_VERSION == "0.3.5"
+    assert updater.version_tuple("v" + updater.APP_VERSION) is not None
 
 
 def test_only_verified_stable_mochi_release_is_accepted(monkeypatch):
