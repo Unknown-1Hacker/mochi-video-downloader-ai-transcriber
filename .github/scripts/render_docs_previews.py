@@ -72,7 +72,7 @@ def capture_actual_ui(browser) -> None:
         ))
         page.locator("aside.sidebar [data-check-updates]").click()
         page.locator("#update-dialog").wait_for(state="visible", timeout=5000)
-        assert page.locator("#install-update").is_visible()
+        page.locator("#install-update").wait_for(state="visible", timeout=8000)
         assert "v0.3.7" in page.locator("#update-versions").inner_text()
         page.locator("#close-updates").click()
         assert not page.locator("#update-dialog").is_visible()
