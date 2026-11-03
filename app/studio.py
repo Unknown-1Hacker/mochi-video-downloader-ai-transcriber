@@ -250,7 +250,7 @@ class WebHandler(BaseHTTPRequestHandler):
                 self._json(200, UPDATES.check(force=True))
         elif path.path == '/api/update/status':
             if self._authorized():
-                self._json(200, UPDATES.read())
+                self._json(200, UPDATES.read(ROOT))
         elif path.path == '/api/transcript':
             if self._authorized():
                 try:
