@@ -16,7 +16,7 @@ ROOT = root_dir(__file__)
 STATE_DIR = ROOT / '.mochi'
 SESSION = STATE_DIR / 'server.json'
 LOG = STATE_DIR / 'studio.log'
-from version import APP_VERSION
+from version import APP_VERSION, RELEASE_VERSION
 
 
 def valid_session():
@@ -32,7 +32,8 @@ def valid_session():
         if health.get('ok') is True:
             base = f'http://127.0.0.1:{port}'
             open_url = f'{base}/?key={quote(key)}'
-            if health.get('version') == APP_VERSION:
+            if (health.get('version') == APP_VERSION and
+                    health.get('release_version') == RELEASE_VERSION):
                 # A running studio must serve the *real* UI assets, not just a
                 # healthy JSON endpoint. Catch stale or partially updated installs.
                 try:

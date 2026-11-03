@@ -58,8 +58,8 @@ def test_visual_workflow_is_readable_responsive_and_not_a_mock_ui():
 def test_documentation_does_not_promise_unreleased_updater_or_bookmark_support():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "issues/11" in readme
-    assert "not available yet" in readme
-    assert "A bookmarked local browser link can stop working" in readme
+    assert "Still planned, not available yet" in readme
+    assert "Old browser bookmarks may stop working" in readme
     assert "Run Mochi Now" in readme
 
 
@@ -90,3 +90,19 @@ def test_setup_guide_preserves_approved_mascot_artwork():
     assert "def guide_html(" not in script
     assert "git add docs/mochi-interface.webp docs/mochi-transcript-result.webp" in workflow
     assert "git add docs/mochi-interface.webp docs/mochi-transcript-result.webp docs/mochi-first-time-vs-next-time.webp" not in workflow
+
+
+def test_update_button_replaces_duplicate_settings_link_without_losing_controls():
+    ui = (ROOT / "app/assets/index.html").read_text(encoding="utf-8")
+    script = (ROOT / "app/assets/app.js").read_text(encoding="utf-8")
+    assert ui.count('class="side-link"') == 3
+    assert ui.count('data-check-updates') == 2
+    assert 'data-go-settings' not in ui
+    assert 'id="finishing"' in ui  # Main quality/language settings remain.
+    for element in ('update-dialog', 'install-update', 'cancel-update',
+                    'check-update-again', 'close-updates'):
+        assert f'id="{element}"' in ui
+    for path in ("/api/update/check", "/api/update/start", "/api/update/cancel",
+                 "/api/update/status"):
+        assert path in script
+    assert "In-app updates, persistent transcript history" not in (ROOT / "README.md").read_text(encoding="utf-8")

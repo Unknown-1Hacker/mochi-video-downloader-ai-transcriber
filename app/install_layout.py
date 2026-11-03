@@ -6,6 +6,7 @@ import sys
 import subprocess
 import plistlib
 import json
+import time
 import urllib.request
 from pathlib import Path
 from mochi_paths import root_dir
@@ -24,7 +25,7 @@ README = """✦ MOCHI VIDEO STUDIO ✦
 🔗 Paste a link → choose → Make it happen.
 📝 Transcript done? Open transcript / Copy for AI / Open folder.
 📁 Saved files: .mochi/Downloads. Keep .mochi (tools + files).
-🔄 Update: merge the latest ZIP into this folder; rerun Install-Mochi.
+🔄 Check for updates in Mochi. If needed, use the official ZIP installer.
 🔖 Old browser bookmarks may expire; use Run Mochi Now.
 🛠 Stuck? Fix my tools.
 🐧 Linux: allow launching if asked; fallback: sh .mochi/run.sh
@@ -59,6 +60,17 @@ STATE="$ROOT/.mochi"
 PY="$STATE/venv/bin/python"
 APP="$STATE/app"
 LOG="$STATE/launch.log"
+# Reopen interrupted updates without loading half-replaced app files.
+if [ -d "$STATE/app.previous" ]; then
+  if [ ! -x "$PY" ] || [ ! -f "$STATE/updates/update_worker.py" ]; then
+    printf 'Mochi needs manual update recovery. Use the official ZIP installer.\n' >> "$LOG"
+    exit 1
+  fi
+  "$PY" "$STATE/updates/update_worker.py" "$ROOT" --recover >> "$LOG" 2>&1 || {
+    printf 'Mochi is finishing an update. Open Run Mochi Now again shortly.\n' >> "$LOG"
+    exit 1
+  }
+fi
 if [ ! -d "$APP" ]; then
   printf 'Mochi app files are missing. Extract a fresh Mochi.zip and run setup again.\n' >> "$LOG"
   exit 1
@@ -90,6 +102,12 @@ $State = Join-Path $Root '.mochi'
 $Py = Join-Path $State 'venv\Scripts\python.exe'
 $App = Join-Path $State 'app'
 try {
+    if (Test-Path (Join-Path $State 'app.previous')) {
+        $Worker = Join-Path $State 'updates\update_worker.py'
+        if (-not (Test-Path $Py) -or -not (Test-Path $Worker)) { throw 'Update recovery needs the official ZIP installer.' }
+        & $Py $Worker $Root --recover
+        if ($LASTEXITCODE -ne 0) { throw 'Mochi is finishing an update. Open it again shortly.' }
+    }
     $NeedSetup = -not (Test-Path $Py)
     if (-not $NeedSetup) {
         & $Py -c 'import importlib.util as u; assert u.find_spec("yt_dlp")'
@@ -176,6 +194,9 @@ def prepare():
         raise RuntimeError('Mochi is still working. Finish or cancel the current job before upgrading.')
     if NEXT.exists():
         shutil.rmtree(NEXT)
+    # Never race an in-app worker that is still swapping/health-checking.
+    if BACKUP.exists() and _app_update_is_applying():
+        raise RuntimeError('Mochi is finishing an update. Reopen Run Mochi Now shortly.')
     # Heal an interrupted prior upgrade before attempting another one.
     if BACKUP.exists():
         rollback()
@@ -209,6 +230,19 @@ def prepare():
         _write_linux_desktop()
 
 
+def _app_update_is_applying():
+    """A fresh update journal means the detached helper still owns the app."""
+    file = STATE / 'updates' / 'status.json'
+    try:
+        if file.is_symlink() or file.stat().st_size > 4096:
+            return False
+        status = json.loads(file.read_text(encoding='utf-8'))
+        return (status.get('phase') == 'applying' and
+                0 <= time.time() - float(status.get('time', 0)) < 120)
+    except (OSError, ValueError, TypeError):
+        return False
+
+
 def _older_app_is_busy():
     # Protect a live download during an in-place upgrade from an older Mochi.
     try:
@@ -221,7 +255,12 @@ def _older_app_is_busy():
         health=get('/api/health')
         if health.get('ok') is not True:
             return False
-        return get('/api/status').get('state') in ('working','repairing')
+        if get('/api/status').get('state') in ('working', 'repairing'):
+            return True
+        try:
+            return get('/api/update/status').get('phase') in ('downloading', 'staging', 'restarting')
+        except (OSError, ValueError, KeyError, TypeError):
+            return False  # Releases older than v0.3.6 have no updater endpoint.
     except (OSError,ValueError,KeyError,TypeError):
         return False
 

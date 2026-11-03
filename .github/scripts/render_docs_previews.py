@@ -65,9 +65,25 @@ def capture_actual_ui(browser) -> None:
         page.locator(".hero-bunny img").evaluate(
             "(image) => image.decode()"
         )
+        # Exercise the actual sidebar button without contacting GitHub.
+        page.route("**/api/update/check", lambda route: route.fulfill(
+            status=200, content_type="application/json",
+            body='{"phase":"available","message":"A newer Mochi release is ready.","current":"v0.3.6","latest":"v0.3.7","percent":0}'
+        ))
+        page.locator("aside.sidebar [data-check-updates]").click()
+        page.locator("#update-dialog").wait_for(state="visible", timeout=5000)
+        page.locator("#install-update").wait_for(state="visible", timeout=8000)
+        assert "v0.3.7" in page.locator("#update-versions").inner_text()
+        page.locator("#close-updates").click()
+        assert not page.locator("#update-dialog").is_visible()
         assert page.locator("aside.sidebar .side-link").count() == 3
+        sidebar = page.locator("aside.sidebar").inner_text()
+        assert "Check for updates" in sidebar
+        assert "Settings" not in sidebar
+        assert page.locator("[data-check-updates]").count() == 2
+        assert page.locator("#update-dialog").count() == 1
         assert page.locator("label.choice").count() == 4
-        assert page.locator("aside.sidebar").inner_text().find("Full video") == -1
+        assert "Full video" not in sidebar
         save_webp(page, "mochi-interface.webp")
 
         page.locator('label.choice:has(input[value="transcript"])').click()

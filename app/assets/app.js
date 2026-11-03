@@ -4,6 +4,8 @@ const el=id=>document.getElementById(id);
 const mode=()=>document.querySelector('input[name="mode"]:checked').value;
 let busy=false,qualitiesBusy=false, lastState='ready', restoredPending=false;
 let transcriptCache=null, transcriptFolder='';
+let updatePhase='idle', updateTarget='', updateChecking=false, upgradeWatching=false;
+const updating=()=>['downloading','staging','restarting'].includes(updatePhase);
 async function api(route,body){
   const options={headers:{'X-Mochi-Key':KEY}};
   if(body!==undefined){options.method='POST';options.headers['Content-Type']='application/json';options.body=JSON.stringify(body)}
@@ -21,10 +23,7 @@ function selectedMode(){
   el('language-options').classList.toggle('hidden',!speech);
 }
 document.querySelectorAll('[name="mode"]').forEach(node=>node.addEventListener('change',selectedMode));
-// Sidebar and header shortcuts share the same working actions.
-document.querySelectorAll('[data-go-settings]').forEach(button=>button.addEventListener('click',()=>{
-  el('finishing').scrollIntoView({behavior:'smooth',block:'center'});
-}));
+// Sidebar and mobile header share the same working utilities.
 document.querySelectorAll('[data-repair]').forEach(button=>button.addEventListener('click',()=>el('repair').click()));
 document.querySelectorAll('[data-open-downloads]').forEach(button=>button.addEventListener('click',async()=>{
   try{await api('/api/open-downloads',{})}catch(e){note(e.message)}
@@ -39,7 +38,7 @@ function note(message,state='error'){
 }
 function optionData(){return{mode:mode(),height:el('height').value==='best'?'best':Number(el('height').value),audio_format:el('audio-format').value,speech_quality:el('speech-quality').value,language:el('language').value}};
 el('find-qualities').addEventListener('click',async()=>{
-  if(qualitiesBusy||busy)return;
+  if(qualitiesBusy||busy||updating())return;
   qualitiesBusy=true;el('find-qualities').disabled=true;el('find-qualities').textContent='Checking…';
   try{
     const info=await api('/api/qualities',{url:el('url').value.trim()});
@@ -51,7 +50,7 @@ el('find-qualities').addEventListener('click',async()=>{
   finally{qualitiesBusy=false;el('find-qualities').disabled=false;el('find-qualities').textContent='See options'}
 });
 el('start').addEventListener('click',async()=>{
-  if(busy)return;
+  if(busy||updating())return;
   try{
     await api('/api/start',{url:el('url').value.trim(),options:optionData()});
     resetTranscript();
@@ -61,7 +60,7 @@ el('start').addEventListener('click',async()=>{
 });
 el('cancel').addEventListener('click',async()=>{el('cancel').disabled=true;try{await api('/api/cancel',{});el('status-text').textContent='Stopping safely…'}catch(e){note(e.message)}});
 el('again').addEventListener('click',()=>{el('activity').classList.add('hidden');el('url').focus()});
-el('repair').addEventListener('click',async()=>{if(busy)return;el('repair').disabled=true;try{await api('/api/repair',{});busy=true;await refresh()}catch(e){busy=false;note(e.message)}finally{el('repair').disabled=busy}});
+el('repair').addEventListener('click',async()=>{if(busy||updating())return;el('repair').disabled=true;try{await api('/api/repair',{});busy=true;await refresh()}catch(e){busy=false;note(e.message)}finally{el('repair').disabled=busy}});
 el('open-folder').addEventListener('click',async()=>{try{await api('/api/open',{})}catch(e){note(e.message)}});
 
 // The text stays local until the user explicitly copies it or uploads the TXT.
@@ -111,7 +110,10 @@ el('copy-transcript').addEventListener('click',async()=>{
 async function refresh(){
   try{
     const st=await api('/api/status');
-    if(st.state==='ready'){busy=false;el('repair').disabled=false;return;}
+    if(st.state==='ready'){
+      busy=false;el('start').disabled=updating();el('repair').disabled=updating();
+      return;
+    }
     if(st.state==='interrupted' && st.pending && !restoredPending){
       restoredPending=true;
       el('url').value=st.pending.url;
@@ -129,10 +131,10 @@ async function refresh(){
     el('status-text').textContent=st.message;
     const pct=Number(st.percent)||0;el('percent').textContent=pct+'%';el('progress-fill').style.width=pct+'%';el('progress').setAttribute('aria-valuenow',String(pct));
     busy=st.state==='working'||st.state==='repairing';
-    el('start').disabled=busy;el('start').textContent=busy?'Working its magic…':'Make it happen ✦';
+    el('start').disabled=busy||updating();el('start').textContent=busy?'Working its magic…':'Make it happen ✦';
     el('cancel').classList.toggle('hidden',!busy);el('cancel').disabled=false;
     el('again').classList.toggle('hidden',busy);
-    el('repair').disabled=busy;el('repair').textContent=st.state==='repairing'?'🛠 Fixing…':'🛠 Fix my tools';
+    el('repair').disabled=busy||updating();el('repair').textContent=st.state==='repairing'?'🛠 Fixing…':'🛠 Fix my tools';
     const done=st.state==='done';el('results').classList.toggle('hidden',!done);
     const hasTranscript=done&&Array.isArray(st.files)&&st.files.includes('Transcript.txt');
     if(!hasTranscript||transcriptFolder!==st.folder){
@@ -144,6 +146,86 @@ async function refresh(){
     if(done){const container=el('file-list');container.replaceChildren();for(const item of st.files){const span=document.createElement('span');span.textContent='📄 '+item;container.appendChild(span)}}
   }catch(err){if(busy){el('status-text').textContent='App connection was lost. Double-click Run Mochi Now to reconnect.';busy=false;el('start').disabled=false}}
 }
+
+function updateView(state){
+  updatePhase=state.phase||'idle';
+  if(state.latest)updateTarget=state.latest;
+  const current=state.current||'unknown';
+  const latest=state.latest||'';
+  el('update-versions').textContent='Installed '+current+(latest?' · Latest '+latest:'');
+  el('update-message').textContent=state.message||'Check the official GitHub release.';
+  const canInstall=updatePhase==='available'&&!busy;
+  el('install-update').classList.toggle('hidden',updatePhase!=='available');
+  el('install-update').disabled=!canInstall;
+  el('cancel-update').classList.toggle('hidden',!['downloading','staging'].includes(updatePhase));
+  el('cancel-update').disabled=updatePhase==='restarting';
+  el('check-update-again').disabled=updateChecking||updating();
+  if(updating()&&Number.isFinite(state.percent))
+    el('update-message').textContent=(state.message||'Updating…')+' '+state.percent+'%';
+  if(updatePhase==='restarting'){
+    el('update-message').textContent='Restarting Mochi. A fresh local browser tab should open. If it does not, use Run Mochi Now.';
+    watchUpdateRestart();
+  }
+}
+async function checkForUpdates(){
+  const dialog=el('update-dialog');
+  if(!dialog.open)dialog.showModal();
+  if(updateChecking||updating())return;
+  updateChecking=true;
+  el('check-update-again').disabled=true;
+  el('update-message').textContent='Checking the official Mochi release…';
+  try{ updateView(await api('/api/update/check')); }
+  catch(error){ el('update-message').textContent='Could not check updates. Try again when online.'; }
+  finally{ updateChecking=false;el('check-update-again').disabled=updating(); }
+}
+document.querySelectorAll('[data-check-updates]').forEach(button=>button.addEventListener('click',checkForUpdates));
+el('check-update-again').addEventListener('click',checkForUpdates);
+el('close-updates').addEventListener('click',()=>el('update-dialog').close());
+el('install-update').addEventListener('click',async()=>{
+  if(updatePhase!=='available'||busy)return;
+  el('install-update').disabled=true;
+  try{
+    await api('/api/update/start',{});
+    updateView({phase:'downloading',message:'Downloading the verified ZIP…',percent:0});
+  }catch(error){
+    el('update-message').textContent=error.message||'Could not start the update.';
+    el('install-update').disabled=false;
+  }
+});
+el('cancel-update').addEventListener('click',async()=>{
+  el('cancel-update').disabled=true;
+  try{await api('/api/update/cancel',{});el('update-message').textContent='Cancelling safely…';}
+  catch(error){el('update-message').textContent=error.message}
+});
+async function pollAppUpdate(){
+  if(!updating())return;
+  try{updateView(await api('/api/update/status'));}
+  catch(error){
+    if(updatePhase==='restarting')watchUpdateRestart();
+    else el('update-message').textContent='Connection lost. Reopen Run Mochi Now to recover.';
+  }
+}
+async function watchUpdateRestart(){
+  if(upgradeWatching)return;
+  upgradeWatching=true;
+  // Old bookmarks can expire; the detached helper opens the NEW private URL.
+  for(let attempt=0;attempt<35;attempt++){
+    await new Promise(resolve=>setTimeout(resolve,1400));
+    try{
+      const status=await api('/api/update/status');
+      if(status.phase==='updated'){
+        location.reload();return;
+      }
+      if(['failed','rolled-back'].includes(status.phase)){
+        updateView(status);upgradeWatching=false;return;
+      }
+    }catch(error){/* server may have changed its private loopback port */ }
+  }
+  el('update-message').textContent='Open Run Mochi Now if the new Mochi tab did not appear.';
+  upgradeWatching=false;
+}
+
 selectedMode();refresh();setInterval(refresh,850);
+setInterval(pollAppUpdate,1500);
 
 
