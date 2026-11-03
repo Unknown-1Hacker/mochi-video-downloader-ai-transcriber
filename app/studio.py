@@ -305,6 +305,9 @@ class WebHandler(BaseHTTPRequestHandler):
             elif self.path == '/api/update/start':
                 UPDATES.start(ROOT, JOB, self.server)
                 self._json(200, {'ok': True})
+            elif self.path == '/api/update/cancel':
+                UPDATES.cancel_download()
+                self._json(200, {'ok': True})
             elif self.path in ('/api/open', '/api/open-downloads'):
                 if self.path == '/api/open':
                     if JOB.read().get('state') != 'done':
