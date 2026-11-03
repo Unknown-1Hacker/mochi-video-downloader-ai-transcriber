@@ -30,6 +30,8 @@ README = """✦ MOCHI VIDEO STUDIO ✦
 💾 In hidden .mochi/: keep Downloads; cache is safe to clear when closed. AI is optional.
 
 🛠 Stuck? Tap Fix my tools (top right).
+🔄 New version? In Mochi, use Check for updates, then Update now.
+🔖 Bookmarks work while Mochi runs; after reboot open Run Mochi Now first.
 💜 Made with love by 1Hack — OneHack.st
 """
 
