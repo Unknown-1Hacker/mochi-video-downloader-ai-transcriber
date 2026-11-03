@@ -29,3 +29,7 @@
 .update-release-link{color:#7452c8;font-size:13px;font-weight:750;text-decoration:underline}
 .update-dialog button:focus-visible{outline:3px solid #b69bf8;outline-offset:3px}
 @media(max-width:600px){.update-dialog{padding:18px;border-radius:18px}}
+
+/* One visible update shortcut at a time: sidebar on desktop, header on phones. */
+.top-updates{display:none}
+@media(max-width:870px){.top-updates{display:block}}
