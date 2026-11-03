@@ -10,7 +10,7 @@ on:
       version:
         description: Release version (for example, v0.2.0)
         required: true
-        default: v0.3.5
+        default: v0.3.6
         type: string
 
 permissions:
@@ -28,6 +28,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: 🧭 Confirm public release version matches bundled app
+        env:
+          VERSION: ${{ inputs.version || 'v0.3.6' }}
+        run: |
+          python - <<'PY'
+          import os
+          from app.version import RELEASE_VERSION
+          expected = 'v' + RELEASE_VERSION
+          assert os.environ['VERSION'] == expected, (
+              f"Refusing mismatched tag: expected {expected}"
+          )
+          PY
       - name: 🧪 Check Mochi before release
         run: |
           sudo apt-get update -qq
@@ -131,9 +143,9 @@ jobs:
 
           📝 After creating a transcript, open it inside Mochi, copy the text for ChatGPT, Claude or any AI, or open the saved folder. No automatic sharing.
 
-          📖 **Documentation refresh:** Current Home and transcript screenshots, clearer OS install guide, and short corrected quick-start notes.
+          🔄 **New: Check for updates** in Mochi's sidebar (or the mobile header). It checks the official stable GitHub release only when you choose; newer versions offer **Update now**. The update ZIP is verified before the app switches; saved media and AI models are kept. No account or automatic upload.
 
-          ✨ Cleaner studio: pick video, audio, subtitles, or transcript on Home. Sidebar is now for Settings, Downloads, and Fix my tools.
+          ✨ **Less clutter:** Settings remain alongside the quality/language choices. Sidebar: **Check for updates**, **Downloads**, **Fix my tools**.
 
           ⚡ Tries two independent methods to get existing YouTube captions. Only if both fail does it download audio and prepare local AI. No paid transcript service.
 
@@ -141,7 +153,7 @@ jobs:
 
           🛠 **Something stuck?** Tap **Fix my tools**. Your OS may still ask you to approve the launcher.
 
-          🔄 **Updating today:** Extract the latest ZIP into your existing Mochi folder without deleting `.mochi`, then run the Install-Mochi launcher again. In-app updates and persistent browser bookmarks are planned, not available yet.
+          🔄 **First upgrade from v0.3.5 or earlier:** Download this ZIP, merge into your existing Mochi folder without deleting `.mochi`, and run Install-Mochi once. Future compatible release updates can be installed inside the app. Updates requiring new dependencies use the manual installer. Browser bookmarks and historical transcript browsing remain limited.
 
           💜 Made with love by **[1Hack](https://onehack.st/)**
           MD
@@ -149,7 +161,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          VERSION: ${{ inputs.version || 'v0.3.5' }}
+          VERSION: ${{ inputs.version || 'v0.3.6' }}
         run: |
           if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo 'Expected a version such as v0.1.0'
