@@ -271,7 +271,7 @@ def test_updater_does_not_reuse_stale_previous_status_for_new_restart(tmp_path):
 
 def test_release_identity_distinct_from_internal_server_protocol():
     from version import APP_VERSION, RELEASE_VERSION
-    assert APP_VERSION == "0.3.1"
+    assert APP_VERSION == "0.3.6"
     assert RELEASE_VERSION == "0.3.6"
     assert updater.version_tuple(RELEASE_VERSION) == (0, 3, 6)
 
