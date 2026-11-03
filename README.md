@@ -34,32 +34,25 @@
 
 ## 🧭 How Mochi works
 
-**🐰 Run Mochi Now → 🖥️ Local browser studio → 🔗 Paste one YouTube link → 🎯 Pick ONE result**
+<p align="center">
+  <picture>
+    <source media="(max-width: 700px)" srcset="docs/mochi-how-it-works-mobile.svg" />
+    <img src="docs/mochi-how-it-works.svg" width="940" alt="Mochi workflow tree: open the local studio, paste one YouTube link and choose one result. Video or audio uses yt-dlp and FFmpeg to save media. Subtitles or transcripts try two direct YouTube caption methods first, then local faster-whisper AI only if captions fail; save SRT and VTT or TXT." />
+  </picture>
+</p>
 
-**🎬 Full video** → `yt-dlp` downloads → `FFmpeg` joins picture + sound when needed → 💾 Video
-
-**🎧 Audio only** → `yt-dlp` downloads → `FFmpeg` converts if you choose MP3 → 💾 Audio / MP3
-
-**💬 Subtitles / 📝 Transcript** → Mochi takes the first working route:
-
-> **⚡ 1 · YouTube captions** — `yt-dlp` checks available caption tracks.  
-> ↓ *If missing or unusable*  
-> **🔄 2 · Second direct caption reader** — `youtube-transcript-api` tries another way.  
-> ↓ *Only if both caption methods fail*  
-> **🧠 3 · Local AI** — `yt-dlp` gets the original audio → `faster-whisper` recognizes speech **on your computer**.
-
-**💾 Saved result:** `Subtitles.srt` + `Subtitles.vtt` **or** `Transcript.txt`, depending on your choice. Usable captions skip audio downloading and AI entirely; AI tools and model are installed only if needed.
-
-**📝 Transcript ready?** **Open transcript** to read it in Mochi · **Copy for AI** to paste into any AI chat · **Open folder** to find the original `Transcript.txt`. Mochi never uploads your transcript to an AI chat automatically.
+<p align="center"><sub>Illustrated workflow · The first usable captions win, skipping audio downloads and AI.</sub></p>
 
 <details>
-<summary><strong>🛠 Curious? The Mochi scripts behind the magic</strong></summary>
+<summary><strong>🛠 Curious? Which scripts are behind the magic?</strong></summary>
 
-`app/launcher.py` starts the local `app/studio.py` → `app/core.py` handles your choice → `app/captions.py` checks both caption routes → `app/doctor.py` prepares optional speech tools when needed. Saved files live in `.mochi/Downloads/`.
+`app/launcher.py` starts Mochi → `app/studio.py` opens the local browser interface → `app/core.py` handles your choice → `app/captions.py` tries both direct caption methods → `app/doctor.py` prepares optional AI tools if needed.
+
+**The tools:** `yt-dlp` downloads media and checks captions · `FFmpeg` handles media formats · `youtube-transcript-api` is the second caption reader · `faster-whisper` runs speech recognition on your computer.
+
+No paid transcription service or account required. Captions and AI-generated text can contain mistakes. Mochi never uploads your transcript to an AI chat automatically.
 
 </details>
-
-<sub>No paid transcription service or account required. Captions and AI-generated text can contain mistakes.</sub>
 
 <details>
 <summary><strong>👀 See the actual finished transcript view</strong></summary>
