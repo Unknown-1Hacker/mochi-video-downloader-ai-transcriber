@@ -147,7 +147,8 @@ def test_cancelled_fast_path_never_publishes_output(tmp_path, monkeypatch):
     assert not list(tmp_path.rglob("Transcript.txt"))
 
 
-def test_no_external_transcript_site_requests():
+def test_caption_readers_are_direct_and_no_hosted_url_is_hardcoded():
     src = Path(captions.__file__).read_text(encoding="utf-8")
-    assert "freeyoutubetranscribe.com" not in src
-    assert "yoututranscript.com" not in src
+    assert "yt_dlp.YoutubeDL" in src
+    assert "YouTubeTranscriptApi" in src
+    assert "http://" not in src and "https://" not in src

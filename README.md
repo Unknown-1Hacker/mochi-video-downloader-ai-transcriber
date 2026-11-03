@@ -34,14 +34,32 @@
 
 ## 🧭 How Mochi works
 
-**🔗 Paste one YouTube link → 🎯 Choose what you want → 💾 Save it on your computer.**
+**🐰 Run Mochi Now → 🖥️ Local browser studio → 🔗 Paste one YouTube link → 🎯 Pick ONE result**
 
-- **🎬 Video / 🎧 Audio:** Mochi downloads your chosen media.
-- **💬 Subtitles / 📝 Transcript:** Mochi tries YouTube captions **two ways** → if both fail, **local AI listens to the audio**.
+**🎬 Full video** → `yt-dlp` downloads → `FFmpeg` joins picture + sound when needed → 💾 Video
 
-No paid transcription service or account required. AI is downloaded only when needed; results can contain mistakes.
+**🎧 Audio only** → `yt-dlp` downloads → `FFmpeg` converts if you choose MP3 → 💾 Audio / MP3
 
-**📝 When a transcript finishes:** **Open transcript** to read it in Mochi, **Copy for AI** to paste into ChatGPT, Claude, or another AI, or **Open folder** for the saved `Transcript.txt`. Nothing is uploaded automatically.
+**💬 Subtitles / 📝 Transcript** → Mochi takes the first working route:
+
+> **⚡ 1 · YouTube captions** — `yt-dlp` checks available caption tracks.  
+> ↓ *If missing or unusable*  
+> **🔄 2 · Second direct caption reader** — `youtube-transcript-api` tries another way.  
+> ↓ *Only if both caption methods fail*  
+> **🧠 3 · Local AI** — `yt-dlp` gets the original audio → `faster-whisper` recognizes speech **on your computer**.
+
+**💾 Saved result:** `Subtitles.srt` + `Subtitles.vtt` **or** `Transcript.txt`, depending on your choice. Usable captions skip audio downloading and AI entirely; AI tools and model are installed only if needed.
+
+**📝 Transcript ready?** **Open transcript** to read it in Mochi · **Copy for AI** to paste into any AI chat · **Open folder** to find the original `Transcript.txt`. Mochi never uploads your transcript to an AI chat automatically.
+
+<details>
+<summary><strong>🛠 Curious? The Mochi scripts behind the magic</strong></summary>
+
+`app/launcher.py` starts the local `app/studio.py` → `app/core.py` handles your choice → `app/captions.py` checks both caption routes → `app/doctor.py` prepares optional speech tools when needed. Saved files live in `.mochi/Downloads/`.
+
+</details>
+
+<sub>No paid transcription service or account required. Captions and AI-generated text can contain mistakes.</sub>
 
 <details>
 <summary><strong>👀 See the actual finished transcript view</strong></summary>
