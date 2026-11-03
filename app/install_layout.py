@@ -26,8 +26,11 @@ README = """✦ MOCHI VIDEO STUDIO ✦
 🔗 Paste a YouTube link
 🎬 Pick video / audio / subtitles / text
 ✨ Press Make it happen
-📂 Saved files: tap Open my saved files after completion.
+📁 After a download: choose Open folder.
+📝 After a transcript: Open transcript / Copy for AI / Open folder.
 💾 In hidden .mochi/: keep Downloads; cache is safe to clear when closed. AI is optional.
+🔄 To update, keep this folder and .mochi; use the latest Install-Mochi file.
+🔖 Old browser bookmarks may expire after a restart. Use Run Mochi Now.
 
 🛠 Stuck? Tap Fix my tools (top right).
 💜 Made with love by 1Hack — OneHack.st
