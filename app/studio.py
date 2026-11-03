@@ -135,6 +135,37 @@ class JobState:
 
 JOB = JobState()
 
+# The browser can read only the TXT file produced by the completed job.
+# Keep large transcripts as normal local files rather than sending huge JSON.
+TRANSCRIPT_PREVIEW_LIMIT = 4 * 1024 * 1024
+
+
+def completed_transcript_text() -> str:
+    job = JOB.read()
+    if job.get('state') != 'done' or 'Transcript.txt' not in job.get('files', []):
+        raise FriendlyError('No finished transcript to open yet.')
+    folder = Path(job.get('folder') or '')
+    saved = folder / 'Transcript.txt'
+    try:
+        # Never accept other filenames, symlinks, arbitrary paths or old jobs.
+        if saved.is_symlink():
+            raise FriendlyError('The saved transcript cannot be opened safely. Use Open folder.')
+        target = saved.resolve(strict=True)
+        if not target.is_relative_to(OUTPUT_DIR.resolve()) or not target.is_file():
+            raise FriendlyError('The saved transcript cannot be opened safely. Use Open folder.')
+        if target.stat().st_size > TRANSCRIPT_PREVIEW_LIMIT:
+            raise FriendlyError('Transcript is too large to show here. Open the folder and upload the TXT file to your AI.')
+        content = target.read_bytes()
+        if len(content) > TRANSCRIPT_PREVIEW_LIMIT:
+            raise FriendlyError('Transcript is too large to show here. Open the folder and upload the TXT file to your AI.')
+        if not content:
+            raise FriendlyError('Transcript is empty. Open the folder to check the file.')
+        # Normalize platform-specific line breaks for clean AI-chat paste.
+        # The original TXT on disk remains untouched.
+        return content.decode('utf-8').replace('\r\n', '\n').replace('\r', '\n')
+    except (OSError, UnicodeError) as exc:
+        raise FriendlyError('Could not read the saved transcript. Open the folder to check it.') from exc
+
 
 class WebHandler(BaseHTTPRequestHandler):
     server_version = 'Mochi/1.0'
@@ -198,6 +229,12 @@ class WebHandler(BaseHTTPRequestHandler):
         elif path.path == '/api/health':
             if self._authorized():
                 self._json(200, {'ok': True, 'version': APP_VERSION})
+        elif path.path == '/api/transcript':
+            if self._authorized():
+                try:
+                    self._json(200, {'text': completed_transcript_text()})
+                except FriendlyError as exc:
+                    self._json(400, {'error': str(exc)})
         elif path.path == '/favicon.ico':
             self._file('favicon.ico', 'image/x-icon')
         elif path.path == '/assets/mochi.svg':

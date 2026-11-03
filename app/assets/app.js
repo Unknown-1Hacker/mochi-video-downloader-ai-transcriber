@@ -3,6 +3,7 @@ const KEY=document.querySelector('meta[name="mochi-key"]').content;
 const el=id=>document.getElementById(id);
 const mode=()=>document.querySelector('input[name="mode"]:checked').value;
 let busy=false,qualitiesBusy=false, lastState='ready', restoredPending=false;
+let transcriptCache=null, transcriptFolder='';
 async function api(route,body){
   const options={headers:{'X-Mochi-Key':KEY}};
   if(body!==undefined){options.method='POST';options.headers['Content-Type']='application/json';options.body=JSON.stringify(body)}
@@ -53,6 +54,7 @@ el('start').addEventListener('click',async()=>{
   if(busy)return;
   try{
     await api('/api/start',{url:el('url').value.trim(),options:optionData()});
+    resetTranscript();
     busy=true;el('repair').disabled=true;el('activity').classList.remove('hidden');el('activity').scrollIntoView({behavior:'smooth',block:'nearest'});
     await refresh();
   }catch(e){note(e.message,'error')}
@@ -61,6 +63,51 @@ el('cancel').addEventListener('click',async()=>{el('cancel').disabled=true;try{a
 el('again').addEventListener('click',()=>{el('activity').classList.add('hidden');el('url').focus()});
 el('repair').addEventListener('click',async()=>{if(busy)return;el('repair').disabled=true;try{await api('/api/repair',{});busy=true;await refresh()}catch(e){busy=false;note(e.message)}finally{el('repair').disabled=busy}});
 el('open-folder').addEventListener('click',async()=>{try{await api('/api/open',{})}catch(e){note(e.message)}});
+
+// The text stays local until the user explicitly copies it or uploads the TXT.
+function resetTranscript(){
+  transcriptCache=null;transcriptFolder='';
+  el('transcript-preview').classList.add('hidden');el('transcript-text').value='';
+  el('transcript-feedback').textContent='';
+}
+async function transcriptText(){
+  if(transcriptCache!==null)return transcriptCache;
+  const folder=transcriptFolder;
+  const result=await api('/api/transcript');
+  if(folder!==transcriptFolder)throw new Error('This result changed. Open the new transcript instead.');
+  transcriptCache=result.text;
+  return transcriptCache;
+}
+function showTranscript(text){
+  el('transcript-text').value=text;
+  el('transcript-preview').classList.remove('hidden');
+  el('transcript-preview').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+el('open-transcript').addEventListener('click',async()=>{
+  try{showTranscript(await transcriptText());el('transcript-feedback').textContent=''}
+  catch(e){el('transcript-feedback').textContent=e.message}
+});
+el('close-transcript').addEventListener('click',()=>el('transcript-preview').classList.add('hidden'));
+el('copy-transcript').addEventListener('click',async()=>{
+  try{
+    const text=await transcriptText();
+    if(!navigator.clipboard||!navigator.clipboard.writeText)throw new Error('Clipboard unavailable');
+    try{
+      await navigator.clipboard.writeText(text);
+      el('transcript-feedback').textContent='Copied! Paste into ChatGPT, Claude, or any AI.';
+    }catch(e){
+      showTranscript(text);el('transcript-text').focus();el('transcript-text').select();
+      el('transcript-feedback').textContent='Clipboard blocked. Text selected: press Ctrl+C or Cmd+C instead.';
+    }
+  }catch(e){
+    if(e.message==='Clipboard unavailable'){
+      showTranscript(transcriptCache);el('transcript-text').focus();el('transcript-text').select();
+      el('transcript-feedback').textContent='Select text and press Ctrl+C or Cmd+C, or upload the TXT file.';
+    }else{
+      el('transcript-feedback').textContent=e.message;
+    }
+  }
+});
 async function refresh(){
   try{
     const st=await api('/api/status');
@@ -87,6 +134,13 @@ async function refresh(){
     el('again').classList.toggle('hidden',busy);
     el('repair').disabled=busy;el('repair').textContent=st.state==='repairing'?'🛠 Fixing…':'🛠 Fix my tools';
     const done=st.state==='done';el('results').classList.toggle('hidden',!done);
+    const hasTranscript=done&&Array.isArray(st.files)&&st.files.includes('Transcript.txt');
+    if(!hasTranscript||transcriptFolder!==st.folder){
+      resetTranscript();
+      if(hasTranscript)transcriptFolder=st.folder;
+    }
+    el('open-transcript').classList.toggle('hidden',!hasTranscript);
+    el('copy-transcript').classList.toggle('hidden',!hasTranscript);
     if(done){const container=el('file-list');container.replaceChildren();for(const item of st.files){const span=document.createElement('span');span.textContent='📄 '+item;container.appendChild(span)}}
   }catch(err){if(busy){el('status-text').textContent='App connection was lost. Double-click Run Mochi Now to reconnect.';busy=false;el('start').disabled=false}}
 }
