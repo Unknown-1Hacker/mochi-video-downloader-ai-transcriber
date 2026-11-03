@@ -14,7 +14,7 @@ URL = "https://www.youtube.com/watch?v=5bKz"
 
 def test_one_version_for_client_server_and_mac_bundle():
     assert studio.APP_VERSION == launcher.APP_VERSION == version.APP_VERSION
-    assert version.APP_VERSION == "0.3.1"
+    assert version.APP_VERSION == "0.3.6"
 
 
 def test_private_job_checkpoint_and_manual_recovery(tmp_path, monkeypatch):
@@ -120,7 +120,7 @@ def test_existing_server_must_serve_real_bunny_before_reuse(tmp_path, monkeypatc
             pass
         def do_GET(self):
             if self.path == '/api/health':
-                data = json.dumps({"ok": True, "version": version.APP_VERSION}).encode()
+                data = json.dumps({"ok": True, "version": version.APP_VERSION, "release_version": version.RELEASE_VERSION}).encode()
                 self.send_response(200);self.end_headers();self.wfile.write(data)
             elif self.path == '/assets/hero-bunny.png':
                 self.send_response(200 if bunny_is_served else 404)
