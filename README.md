@@ -39,7 +39,7 @@
 
 No paid transcription service or account required. AI is downloaded only when needed; results can contain mistakes.
 
-**📝 When a transcript finishes:** **Open transcript** to read it right in Mochi, **Copy for AI** to paste into ChatGPT, Claude, or another AI, or **Open folder** for the saved `Transcript.txt`. Nothing is uploaded or shared automatically.
+**📝 When a transcript finishes:** **Open transcript** to read it right in Mochi, **Copy for AI** to paste into ChatGPT, Claude, or another AI, or **Open folder** for the saved `Transcript.txt`. Nothing is uploaded or shared automatically. The last successful transcript can be reopened after restarting Mochi.
 
 ---
 
@@ -86,6 +86,10 @@ Never delete the whole `.mochi` folder to save space.
 ---
 
 ## 🛠 Need help?
+
+**🔄 Check for updates:** In Mochi, open **A little finishing touch → Mochi updates → Check for updates**. If a newer verified release exists, choose **Update now**. Mochi checks the official GitHub release, verifies the ZIP hash, and restarts without touching downloads or AI models. If an update needs different tools, use the regular installer instead.
+
+**🔖 Bookmark Mochi:** Press **Ctrl+D** (Windows/Linux) or **Cmd+D** (Mac) while Mochi is open. The private local link normally stays the same after restarts and updates. **A bookmark cannot start an app that's closed**—after reboot, open **Run Mochi Now** first. A rare port conflict may require bookmarking the newly opened link.
 
 **Something stuck?** Open Mochi → **Fix my tools**, or [ask the 1Hack community](https://onehack.st/t/mochi-free-youtube-downloader-ai-subtitles-transcript/326924).
 
