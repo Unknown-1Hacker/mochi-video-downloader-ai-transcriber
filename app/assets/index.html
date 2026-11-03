@@ -21,12 +21,12 @@
     <nav class="top-actions" aria-label="Quick actions">
       <button class="top-action" data-open-downloads type="button" title="Open saved downloads">📂 <span>Downloads</span></button>
       <button id="repair" class="top-action top-repair" type="button" title="Check and repair download and AI tools">🛠 <span>Fix my tools</span></button>
-      <button class="top-action top-settings" data-go-settings type="button" title="Jump to quality and language">⚙ <span>Settings</span></button>
+      <button class="top-action top-updates" data-check-updates type="button" title="Check for a newer Mochi release">🔄 <span>Updates</span></button>
     </nav>
   </header>
   <div class="app-body" id="home">
     <aside class="sidebar" aria-label="Tools and shortcuts">
-      <button class="side-link" data-go-settings type="button"><span class="side-emoji" aria-hidden="true">⚙️</span><span><strong>Settings</strong><small>Quality and language</small></span></button>
+      <button class="side-link" data-check-updates type="button"><span class="side-emoji" aria-hidden="true">🔄</span><span><strong>Check for updates</strong><small>New Mochi versions</small></span></button>
       <button class="side-link" data-open-downloads type="button"><span class="side-emoji" aria-hidden="true">📁</span><span><strong>Downloads</strong><small>Open saved files</small></span></button>
       <button class="side-link" data-repair type="button"><span class="side-emoji" aria-hidden="true">🛠️</span><span><strong>Fix my tools</strong><small>Check and repair</small></span></button>
     </aside>
@@ -77,6 +77,21 @@
       </div><button id="cancel" class="cancel" type="button">Cancel this job</button><button id="again" class="again hidden" type="button">✦ Make another</button></section>
     </main>
   </div>
+  <dialog id="update-dialog" class="update-dialog" aria-labelledby="update-heading">
+    <div class="update-dialog-head">
+      <h2 id="update-heading">🔄 Mochi updates</h2>
+      <button id="close-updates" class="update-dialog-close" type="button" aria-label="Close update window">✕</button>
+    </div>
+    <p id="update-versions" class="update-version-line">Checking your version…</p>
+    <p id="update-message" role="status" aria-live="polite">Only official GitHub releases are checked.</p>
+    <div class="update-dialog-actions">
+      <button id="check-update-again" class="subtle-btn" type="button">Check again</button>
+      <button id="install-update" class="folder hidden" type="button">⬇️ Update now</button>
+      <button id="cancel-update" class="subtle-btn hidden" type="button">Cancel download</button>
+    </div>
+    <p class="update-dialog-note">Downloads and AI models stay on your computer. No automatic update without your approval.</p>
+    <a class="update-release-link" href="https://github.com/Unknown-1Hacker/mochi-video-downloader-ai-transcriber/releases/latest" target="_blank" rel="noopener noreferrer">Official release notes ↗</a>
+  </dialog>
   <footer class="footer"><span>💗 Made with love by 1Hack — <a href="https://onehack.st/" target="_blank" rel="noopener noreferrer">OneHack.st</a></span><span>🔒 AI transcription runs on your computer</span></footer>
 </div>
 <script src="/assets/app.js?v=1.5.0" defer></script>
