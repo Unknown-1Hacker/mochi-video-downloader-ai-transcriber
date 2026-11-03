@@ -190,9 +190,25 @@ class UpdateManager:
         self.cached = None
         self.checked_at = 0
 
-    def read(self):
+    def read(self, root=None):
         with self.lock:
-            return dict(self.state)
+            current = dict(self.state)
+        if current["phase"] != "idle" or root is None:
+            return current
+        # The detached worker can report an interrupted/rolled-back result
+        # after a server restart without relying on stale in-memory state.
+        file = Path(root) / ".mochi" / "updates" / "status.json"
+        try:
+            if file.is_symlink() or file.stat().st_size > 4096:
+                return current
+            saved = json.loads(file.read_text(encoding="utf-8"))
+            if (saved.get("phase") in ("updated", "rolled-back", "failed")
+                    and time.time() - float(saved.get("time", 0)) < 3600):
+                return {"phase": saved["phase"], "message": str(saved.get("message", ""))[:240],
+                        "percent": 100 if saved["phase"] == "updated" else 0}
+        except (OSError, ValueError, TypeError):
+            pass
+        return current
 
     def _set(self, phase, message, percent=None):
         with self.lock:
