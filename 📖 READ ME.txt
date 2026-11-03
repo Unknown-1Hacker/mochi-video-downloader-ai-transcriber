@@ -9,4 +9,4 @@
 🔖 Old browser bookmarks may expire; use Run Mochi Now.
 🐧 Linux: allow launching if needed; or sh .mochi/run.sh
 🛠 Stuck? Fix my tools.
-💜 1Hack — OneHack.st
+💜 Made with love by 1Hack — OneHack.st
