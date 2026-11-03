@@ -77,6 +77,11 @@ def test_one_job_end_to_end_through_server(server,monkeypatch):
         time.sleep(.05)
     assert status['state']=='done' and status['files']==['Transcript.txt']
     assert (root/'My Downloads'/'test-id'/'Transcript.txt').exists()
+    # Real completed state exposes only its saved transcript through local auth.
+    with request(base, '/api/transcript', token) as resp:
+        payload = json.loads(resp.read())
+        assert resp.headers['Cache-Control'] == 'no-store'
+    assert payload == {'text': 'Real recognized speech'}
 
 def test_invalid_input_server_400(server):
     base,token,_=server
@@ -243,3 +248,120 @@ def test_sidebar_javascript_keeps_real_shortcuts_without_removed_handlers():
     assert "document.querySelectorAll('[data-go-settings]')" in source
     assert "document.querySelectorAll('[data-repair]')" in source
     assert "document.querySelectorAll('[data-open-downloads]')" in source
+
+
+def test_transcript_requires_private_session(server):
+    base, token, root = server
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        request(base, '/api/transcript')
+    assert exc.value.code == 403
+
+
+def test_transcript_unavailable_until_job_completed(server, monkeypatch):
+    from types import SimpleNamespace
+    base, token, root = server
+    monkeypatch.setattr(studio, 'JOB', SimpleNamespace(
+        read=lambda: {'state': 'working', 'folder': '', 'files': ['Transcript.txt']}
+    ))
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        request(base, '/api/transcript', token)
+    assert exc.value.code == 400
+
+
+def test_transcript_preview_preserves_unicode_and_newlines(server, monkeypatch):
+    from types import SimpleNamespace
+    base, token, root = server
+    folder = root / 'My Downloads' / 'Family [video]'
+    folder.mkdir(parents=True)
+    text = 'Hello, AI!\nவணக்கம் 🌸\nArabic: مرحبا\n'
+    (folder / 'Transcript.txt').write_text(text, encoding='utf-8')
+    monkeypatch.setattr(studio, 'JOB', SimpleNamespace(
+        read=lambda: {'state': 'done', 'folder': str(folder), 'files': ['Transcript.txt']}
+    ))
+    with request(base, '/api/transcript', token) as resp:
+        assert resp.status == 200
+        assert resp.headers['X-Content-Type-Options'] == 'nosniff'
+        assert json.loads(resp.read()) == {'text': text}
+
+
+def test_transcript_does_not_read_unlisted_or_outside_files(server, monkeypatch):
+    from types import SimpleNamespace
+    base, token, root = server
+    folder = root / 'My Downloads' / 'finished'
+    folder.mkdir(parents=True)
+    (folder / 'Transcript.txt').write_text('SAVED')
+    current = {'state': 'done', 'folder': str(folder), 'files': []}
+    monkeypatch.setattr(studio, 'JOB', SimpleNamespace(read=lambda: dict(current)))
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        request(base, '/api/transcript', token)
+    assert exc.value.code == 400
+    # Even a forged "done" state must not expose files outside Mochi's output root.
+    outsider = root / 'personal'
+    outsider.mkdir()
+    (outsider / 'Transcript.txt').write_text('PRIVATE')
+    current.update(folder=str(outsider), files=['Transcript.txt'])
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        request(base, '/api/transcript', token)
+    assert exc.value.code == 400
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='Symlink creation may need elevated Windows permissions')
+def test_transcript_does_not_follow_symlink(server, monkeypatch):
+    from types import SimpleNamespace
+    base, token, root = server
+    folder = root / 'My Downloads' / 'finished'
+    folder.mkdir(parents=True)
+    other = root / 'private.txt'
+    other.write_text('NEVER SHARE')
+    (folder / 'Transcript.txt').symlink_to(other)
+    monkeypatch.setattr(studio, 'JOB', SimpleNamespace(
+        read=lambda: {'state': 'done', 'folder': str(folder), 'files': ['Transcript.txt']}
+    ))
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        request(base, '/api/transcript', token)
+    assert exc.value.code == 400
+
+
+def test_transcript_too_large_to_copy_as_json(server, monkeypatch):
+    from types import SimpleNamespace
+    base, token, root = server
+    folder = root / 'My Downloads' / 'finished'
+    folder.mkdir(parents=True)
+    (folder / 'Transcript.txt').write_bytes(b'a' * (studio.TRANSCRIPT_PREVIEW_LIMIT + 1))
+    monkeypatch.setattr(studio, 'JOB', SimpleNamespace(
+        read=lambda: {'state': 'done', 'folder': str(folder), 'files': ['Transcript.txt']}
+    ))
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        request(base, '/api/transcript', token)
+    assert exc.value.code == 400
+    assert 'too large' in exc.value.read().decode().lower()
+
+
+def test_transcript_read_failure_does_not_expose_other_files(server, monkeypatch):
+    from types import SimpleNamespace
+    base, token, root = server
+    folder = root / 'My Downloads' / 'finished'
+    folder.mkdir(parents=True)
+    (folder / 'Transcript.txt').write_bytes(b'\xff\xff')
+    monkeypatch.setattr(studio, 'JOB', SimpleNamespace(
+        read=lambda: {'state': 'done', 'folder': str(folder), 'files': ['Transcript.txt']}
+    ))
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        request(base, '/api/transcript', token)
+    assert exc.value.code == 400
+
+
+def test_finished_transcript_controls_are_optional_and_local(server):
+    base, token, _ = server
+    with request(base, '/?key=' + token) as resp:
+        page = resp.read().decode()
+    for control in ('open-transcript', 'copy-transcript', 'open-folder',
+                    'transcript-text', 'transcript-preview'):
+        assert f'id="{control}"' in page
+    assert 'readonly' in page
+    assert 'ChatGPT, Claude, or any AI' in page
+    js = (Path(studio.__file__).parent / 'assets' / 'app.js').read_text(encoding='utf-8')
+    assert "api('/api/transcript')" in js
+    assert 'navigator.clipboard.writeText(text)' in js
+    assert "st.files.includes('Transcript.txt')" in js
+    assert 'https://chatgpt.com' not in js and 'https://claude.ai' not in js
