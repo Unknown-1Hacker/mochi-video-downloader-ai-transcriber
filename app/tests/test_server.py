@@ -408,7 +408,7 @@ def test_updates_private_api_and_beginners_ui(server, monkeypatch):
         page = r.read().decode()
     for control in ('check-update', 'install-update', 'update-message', 'update-current'):
         assert 'id="' + control + '"' in page
-    assert 'Bookmark Mochi' in page
+    assert 'Want to bookmark Mochi?' in page
     assert 'Open transcript' in page and 'Copy for AI' in page
     assert page.count('data-go-settings') == 2
 
