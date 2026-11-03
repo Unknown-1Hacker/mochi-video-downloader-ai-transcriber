@@ -289,9 +289,13 @@ class UpdateManager:
             archive.unlink(missing_ok=True)
             # The running server must exit before the worker can swap app files.
             worker = updates / "update_worker.py"
+            if worker.is_symlink():
+                raise UpdateError("Update helper is unsafe. Reinstall Mochi manually.")
             shutil.copy2(app_dir(root) / "update_worker.py", worker)
             self._set("restarting", "Restarting Mochi safely…", 98)
             log = updates / "update.log"
+            if log.is_symlink():
+                raise UpdateError("Update log is unsafe. Reinstall Mochi manually.")
             with log.open("a", encoding="utf-8") as f:
                 opts = {"stdin": subprocess.DEVNULL, "stdout": f, "stderr": f, "cwd": str(root)}
                 if os.name == "nt":
