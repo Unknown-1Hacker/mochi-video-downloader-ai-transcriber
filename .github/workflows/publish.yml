@@ -1,10 +1,7 @@
 name: 🐰 Publish Mochi
 
+# A new release must be deliberately dispatched; editing notes is not a release.
 on:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/publish.yml
   workflow_dispatch:
     inputs:
       version:
@@ -128,35 +125,12 @@ jobs:
                       env=env, check=True, timeout=15)
                   assert marker.read_text(encoding='utf-8') == 'ready'
           PY
-      - name: 💜 Write simple release notes
+      - name: 💜 Write short notes for this exact version
+        env:
+          VERSION: ${{ inputs.version || 'v0.3.7' }}
         run: |
-          cat > dist/RELEASE.md <<'MD'
-          ## 🐰 Meet Mochi!
-          **One YouTube link → your video, audio, subtitles, or transcript.**
-
-          🎬 **Video** · 🎧 **Audio** · 💬 **Subtitles** · 📝 **Speech to text**
-
-          ### ✨ Get started
-          1. Download **Mochi.zip** below (not Source code).
-          2. Extract it, then open the **Install-Mochi** launcher for your OS (Windows / Mac / Linux).
-          3. Paste a link → pick what you want → **Make it happen!**
-
-          📝 After creating a transcript, open it inside Mochi, copy the text for ChatGPT, Claude or any AI, or open the saved folder. No automatic sharing.
-
-          🔄 **Check for updates:** Find it in the desktop sidebar or the same tool row on mobile. New official releases offer **Update now** after your approval, with ZIP verification and recovery if a restart fails.
-
-          ✨ **Clearer at a glance:** No duplicate buttons in the top bar. One set of tools — **Check for updates · Downloads · Fix my tools** — stays in the sidebar, and becomes a compact row on phones. Quality/language options remain beside your choices.
-
-          ⚡ Tries two independent methods to get existing YouTube captions. Only if both fail does it download audio and prepare local AI. No paid transcript service.
-
-          💾 Storage: tools are kept privately in the hidden `Mochi/.mochi/` folder. Temporary setup cache is cleaned after success; keep `.mochi/Downloads/` (your files).
-
-          🛠 **Something stuck?** Tap **Fix my tools**. Your OS may still ask you to approve the launcher.
-
-          🔄 **First upgrade from v0.3.5 or earlier:** Download this ZIP, merge into your existing Mochi folder without deleting `.mochi`, and run Install-Mochi once. Future compatible release updates can be installed inside the app. Updates requiring new dependencies use the manual installer. Browser bookmarks and historical transcript browsing remain limited.
-
-          💜 Made with love by **[1Hack](https://onehack.st/)**
-          MD
+          python .github/scripts/release_notes.py check
+          python .github/scripts/release_notes.py render "$VERSION" > dist/RELEASE.md
       - name: 🚀 Publish one download
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
