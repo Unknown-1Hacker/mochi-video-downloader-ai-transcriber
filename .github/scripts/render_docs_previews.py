@@ -66,8 +66,13 @@ def capture_actual_ui(browser) -> None:
             "(image) => image.decode()"
         )
         assert page.locator("aside.sidebar .side-link").count() == 3
+        sidebar = page.locator("aside.sidebar").inner_text()
+        assert "Check for updates" in sidebar
+        assert "Settings" not in sidebar
+        assert page.locator("[data-check-updates]").count() == 2
+        assert page.locator("#update-dialog").count() == 1
         assert page.locator("label.choice").count() == 4
-        assert page.locator("aside.sidebar").inner_text().find("Full video") == -1
+        assert "Full video" not in sidebar
         save_webp(page, "mochi-interface.webp")
 
         page.locator('label.choice:has(input[value="transcript"])').click()
