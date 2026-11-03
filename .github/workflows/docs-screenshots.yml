@@ -4,8 +4,11 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - docs/sync-current-ui-previews-20261103
+      - main
     paths:
+      - app/assets/index.html
+      - app/assets/app.js
+      - app/assets/style.css
       - .github/scripts/render_docs_previews.py
       - .github/workflows/docs-screenshots.yml
 
