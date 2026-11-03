@@ -26,7 +26,7 @@
 | 🎬 **Video** | Video with sound, in your chosen available quality |
 | 🎧 **Audio** | Original audio or MP3 |
 | 💬 **Subtitles** | SRT + VTT subtitle files |
-| 📝 **Transcript** | Spoken words in a TXT file |
+| 📝 **Transcript** | Plain TXT text—easy to read, copy into an AI chat, or upload |
 
 ---
 
@@ -38,6 +38,8 @@
 - **💬 Subtitles / 📝 Transcript:** Mochi tries YouTube captions **two ways** → if both fail, **local AI listens to the audio**.
 
 No paid transcription service or account required. AI is downloaded only when needed; results can contain mistakes.
+
+**📝 When a transcript finishes:** **Open transcript** to read it right in Mochi, **Copy for AI** to paste into ChatGPT, Claude, or another AI, or **Open folder** for the saved `Transcript.txt`. Nothing is uploaded or shared automatically.
 
 ---
 
