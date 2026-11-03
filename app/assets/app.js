@@ -111,7 +111,12 @@ el('copy-transcript').addEventListener('click',async()=>{
 async function refresh(){
   try{
     const st=await api('/api/status');
-    if(st.state==='ready'){busy=false;el('repair').disabled=false;return;}
+    if(st.state==='ready'){
+      busy=false;
+      const updating=['downloading','staging','restarting'].includes(updatePhase);
+      el('start').disabled=updating;el('repair').disabled=updating;
+      return;
+    }
     if(st.state==='interrupted' && st.pending && !restoredPending){
       restoredPending=true;
       el('url').value=st.pending.url;
@@ -129,10 +134,11 @@ async function refresh(){
     el('status-text').textContent=st.message;
     const pct=Number(st.percent)||0;el('percent').textContent=pct+'%';el('progress-fill').style.width=pct+'%';el('progress').setAttribute('aria-valuenow',String(pct));
     busy=st.state==='working'||st.state==='repairing';
-    el('start').disabled=busy;el('start').textContent=busy?'Working its magic…':'Make it happen ✦';
+    const updating=['downloading','staging','restarting'].includes(updatePhase);
+    el('start').disabled=busy||updating;el('start').textContent=busy?'Working its magic…':'Make it happen ✦';
     el('cancel').classList.toggle('hidden',!busy);el('cancel').disabled=false;
     el('again').classList.toggle('hidden',busy);
-    el('repair').disabled=busy;el('repair').textContent=st.state==='repairing'?'🛠 Fixing…':'🛠 Fix my tools';
+    el('repair').disabled=busy||updating;el('repair').textContent=st.state==='repairing'?'🛠 Fixing…':'🛠 Fix my tools';
     const done=st.state==='done';el('results').classList.toggle('hidden',!done);
     const hasTranscript=done&&Array.isArray(st.files)&&st.files.includes('Transcript.txt');
     if(!hasTranscript||transcriptFolder!==st.folder){
