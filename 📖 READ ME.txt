@@ -1,12 +1,12 @@
 ✦ MOCHI · QUICK START ✦
-=======================
 
-🚀 FIRST TIME: Open the Install-Mochi launcher for your OS (Windows / Mac / Linux).
-🐧 Linux opens as text? Open a terminal here: sh ./Install-Mochi-Linux.sh
-▶  NEXT TIME: Double-click Run Mochi Now.
-🐧 Linux shortcut blocked? Right-click → Allow Launching; fallback: sh .mochi/run.sh
-🔗 Paste a YouTube link → choose → Make it happen.
-📂 Saved files: tap Open my saved files after completion.
-💾 In hidden .mochi/: keep Downloads; cache is safe to clear when closed. AI is optional.
-🛠 Stuck? Fix my tools (top right).
+🚀 First time: use Install-Mochi for your OS.
+▶ Next time: use Run Mochi Now.
+🔗 Paste a link → choose → Make it happen.
+📝 Transcript done? Open transcript / Copy for AI / Open folder.
+📁 Saved files: .mochi/Downloads. Keep .mochi (tools + files).
+🔄 Update: merge the latest ZIP into this folder; rerun Install-Mochi.
+🔖 Old browser bookmarks may expire; use Run Mochi Now.
+🐧 Linux: allow launching if needed; or sh .mochi/run.sh
+🛠 Stuck? Fix my tools.
 💜 Made with love by 1Hack — OneHack.st

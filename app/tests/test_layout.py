@@ -69,7 +69,7 @@ def test_finish_only_launcher_readme_visible(work):
     install_layout.finish()
     assert sorted(p.name for p in work.iterdir() if not p.name.startswith('.'))==[('Run Mochi Now.lnk' if (work/'Run Mochi Now.lnk').exists() else 'Run Mochi Now.cmd') if os.name == 'nt' else ('Run Mochi Now.app' if sys.platform == 'darwin' else 'Run Mochi Now.desktop'),'📖 READ ME.txt']
     readme=(work/'📖 READ ME.txt').read_text(encoding='utf-8')
-    assert len(readme)<500 and '1Hack' in readme and '📂' in readme
+    assert len(readme)<500 and '1Hack' in readme and '📁' in readme
     assert not (work/'app').exists()
     assert (work/'.mochi'/'app'/'core.py').exists()
     assert (work/'.mochi'/'run.sh').exists()

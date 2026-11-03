@@ -14,8 +14,10 @@
 <p align="center"><sub>Free · Windows · macOS · Linux · Local AI · No account</sub></p>
 
 <p align="center">
-  <img src="docs/mochi-interface.webp" width="940" alt="Mochi's real purple interface with a bunny above the video link box and four simple download choices" />
+  <img src="docs/mochi-interface.webp" width="940" alt="Actual Mochi home screen: three sidebar utilities, a YouTube link box, and four choices for video, audio, subtitles, and transcript" />
 </p>
+
+<p align="center"><sub>Actual Mochi home screen · Video, audio, subtitles and transcript are selected here; the sidebar contains only tools.</sub></p>
 
 ---
 
@@ -39,7 +41,18 @@
 
 No paid transcription service or account required. AI is downloaded only when needed; results can contain mistakes.
 
-**📝 When a transcript finishes:** **Open transcript** to read it right in Mochi, **Copy for AI** to paste into ChatGPT, Claude, or another AI, or **Open folder** for the saved `Transcript.txt`. Nothing is uploaded or shared automatically.
+**📝 When a transcript finishes:** **Open transcript** to read it in Mochi, **Copy for AI** to paste into ChatGPT, Claude, or another AI, or **Open folder** for the saved `Transcript.txt`. Nothing is uploaded automatically.
+
+<details>
+<summary><strong>👀 See the actual finished transcript view</strong></summary>
+
+<p align="center">
+  <img src="docs/mochi-transcript-result.webp" width="940" alt="Actual Mochi completion panel with Open transcript, Copy for AI, Open folder, and a read-only preview of demonstration transcript text" />
+</p>
+
+<sub>Captured from Mochi's current interface using clearly labeled demonstration text—not an actual YouTube transcript.</sub>
+
+</details>
 
 ---
 
@@ -51,7 +64,7 @@ No paid transcription service or account required. AI is downloaded only when ne
 
 ### 🗂 First time vs next time
 
-**First time:** Install-Mochi &nbsp; → &nbsp; **Everyday:** Run Mochi Now
+**First time:** `Install-Mochi` for your OS &nbsp; → &nbsp; **Next time:** `Run Mochi Now`.
 
 <p align="center">
   <img src="docs/mochi-first-time-vs-next-time.webp" width="940" alt="Mochi setup guide for Windows, macOS and Linux: use the Install-Mochi file for first-time setup, then Run Mochi Now for everyday use. Keep the hidden .mochi folder." />
@@ -88,6 +101,15 @@ Never delete the whole `.mochi` folder to save space.
 ## 🛠 Need help?
 
 **Something stuck?** Open Mochi → **Fix my tools**, or [ask the 1Hack community](https://onehack.st/t/mochi-free-youtube-downloader-ai-subtitles-transcript/326924).
+
+<details>
+<summary><strong>🔄 Updating Mochi or reopening an old browser bookmark</strong></summary>
+
+- **Update today:** Finish your current job, download the latest Mochi.zip, extract/merge its files into your **existing Mochi folder** (do not delete `.mochi`), then run the `Install-Mochi` file for your OS again.
+- **Reopen Mochi:** Use **Run Mochi Now**. A bookmarked local browser link can stop working after Mochi restarts because the port and session key may change.
+- **Coming later, not available yet:** In-app updates, persistent transcript history and stable browser-bookmark reopening. These are tracked in [the roadmap](https://github.com/Unknown-1Hacker/mochi-video-downloader-ai-transcriber/issues/11).
+
+</details>
 
 <details>
 <summary><strong>🐧 Linux: launcher won't open?</strong></summary>
