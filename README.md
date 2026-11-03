@@ -116,9 +116,11 @@ Never delete the whole `.mochi` folder to save space.
 <details>
 <summary><strong>🔄 Updating Mochi or reopening an old browser bookmark</strong></summary>
 
-- **Update today:** Finish your current job, download the latest Mochi.zip, extract/merge its files into your **existing Mochi folder** (do not delete `.mochi`), then run the `Install-Mochi` file for your OS again.
-- **Reopen Mochi:** Use **Run Mochi Now**. A bookmarked local browser link can stop working after Mochi restarts because the port and session key may change.
-- **Coming later, not available yet:** In-app updates, persistent transcript history and stable browser-bookmark reopening. These are tracked in [the roadmap](https://github.com/Unknown-1Hacker/mochi-video-downloader-ai-transcriber/issues/11).
+- **Update from v0.3.6 onward:** Open Mochi → **Check for updates** in the sidebar (or **Updates** at the top on mobile). A newer **official GitHub Release** offers **Update now** after you approve it. Mochi verifies the release ZIP, restarts, and keeps your downloads and AI models. A code push alone is **not** an app release.
+- **First upgrade from v0.3.5 or older:** That version has no updater button. Download the latest [Mochi.zip](https://github.com/Unknown-1Hacker/mochi-video-downloader-ai-transcriber/releases/latest/download/Mochi.zip), extract/merge into your **existing Mochi folder** without deleting `.mochi`, and run the OS `Install-Mochi` launcher once.
+- **When tools change:** The built-in updater refuses incompatible dependency changes; use the official ZIP installer instead. If a restart fails, use **Run Mochi Now** to recover or follow the manual installer path.
+- **Reopen Mochi:** Use **Run Mochi Now**. Old browser bookmarks may stop working when the local port or session key changes.
+- **Still planned, not available yet:** Persistent transcript history and stable browser bookmarks. See the [roadmap](https://github.com/Unknown-1Hacker/mochi-video-downloader-ai-transcriber/issues/11).
 
 </details>
 
