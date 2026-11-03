@@ -92,11 +92,15 @@ def test_setup_guide_preserves_approved_mascot_artwork():
     assert "git add docs/mochi-interface.webp docs/mochi-transcript-result.webp docs/mochi-first-time-vs-next-time.webp" not in workflow
 
 
-def test_update_button_replaces_duplicate_settings_link_without_losing_controls():
+def test_one_responsive_toolset_replaces_redundant_header_actions():
     ui = (ROOT / "app/assets/index.html").read_text(encoding="utf-8")
     script = (ROOT / "app/assets/app.js").read_text(encoding="utf-8")
     assert ui.count('class="side-link"') == 3
-    assert ui.count('data-check-updates') == 2
+    assert ui.count('data-check-updates') == 1
+    assert ui.count('data-open-downloads') == 1
+    assert ui.count('id="repair"') == 1
+    assert 'top-actions' not in ui
+    assert 'data-repair' not in ui
     assert 'data-go-settings' not in ui
     assert 'id="finishing"' in ui  # Main quality/language settings remain.
     for element in ('update-dialog', 'install-update', 'cancel-update',
