@@ -19,21 +19,17 @@ BACKUP = STATE / 'app.previous'
 NEXT = STATE / 'app.next'
 README_NAME = '📖 READ ME.txt'
 README = """✦ MOCHI VIDEO STUDIO ✦
-======================
 
-▶ Double-click  Run Mochi Now
-🐧 Linux shortcut blocked? Right-click → Allow Launching; fallback: sh .mochi/run.sh
-🔗 Paste a YouTube link
-🎬 Pick video / audio / subtitles / text
-✨ Press Make it happen
-📁 After a download: choose Open folder.
-📝 After a transcript: Open transcript / Copy for AI / Open folder.
-💾 In hidden .mochi/: keep Downloads; cache is safe to clear when closed. AI is optional.
-🔄 To update, keep this folder and .mochi; use the latest Install-Mochi file.
-🔖 Old browser bookmarks may expire after a restart. Use Run Mochi Now.
-
-🛠 Stuck? Tap Fix my tools (top right).
-💜 Made with love by 1Hack — OneHack.st
+▶ Next time: Run Mochi Now.
+🔗 Paste a link → choose → Make it happen.
+🎬 Video / 🎧 Audio / 💬 Subtitles / 📝 Transcript.
+📝 Transcript done? Open transcript / Copy for AI / Open folder.
+📁 Saved files: .mochi/Downloads. Keep .mochi (tools + files).
+🔄 Update: merge the latest ZIP into this folder; rerun Install-Mochi.
+🔖 Old browser bookmarks may expire; use Run Mochi Now.
+🛠 Stuck? Fix my tools.
+🐧 Linux: allow launching if asked; fallback: sh .mochi/run.sh
+💜 1Hack — OneHack.st
 """
 
 # Exact files shipped by the installer or older Mochi versions; never glob-delete.
