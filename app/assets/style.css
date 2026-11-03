@@ -14,3 +14,14 @@
 @media(max-width:870px){.app-body{grid-template-columns:minmax(0,1fr)}.sidebar{display:none}.topbar{min-height:92px;padding:13px 20px}.app-symbol{height:60px;width:60px;border-radius:18px}.app-symbol img{width:47px;height:47px}.identity{gap:13px}.identity-text strong{font-size:31px}.identity-text small{font-size:12px}.top-action{padding:11px 10px;font-size:12px}.main-content{padding:18px 16px 24px}.hero{min-height:145px}}
 @media(max-width:600px){.topbar{flex-wrap:wrap;gap:12px;min-height:0}.identity{width:100%}.top-actions{width:100%;justify-content:space-between;gap:7px}.top-action{flex:1;padding:11px 6px}.hero{display:block;text-align:center;margin-bottom:18px}.hero-bunny{height:120px;width:156px;margin:0 auto 0}.hero-bunny img{width:156px;height:auto;bottom:4px}.bunny-sparkle{font-size:18px}.bunny-sparkle-left{left:-7px;top:68px}.bunny-sparkle-right{right:-9px;top:37px}.hero h1{font-size:29px}.hero p{font-size:15px}.link-panel{grid-template-columns:minmax(0,1fr);padding:14px;gap:10px}.paste{min-height:48px}.link-input-wrap{min-height:53px}.link-input-wrap input{font-size:14px}.link-hint{font-size:11px}.content-card{padding:18px 14px}.content-card h2{font-size:18px}.choices{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.choice{min-height:122px;padding:12px 4px}.choice-label{font-size:14px}.choice-desc{font-size:11px}.emoji{font-size:29px}.options-row{align-items:stretch;flex-direction:column;gap:9px}.select-row select{min-width:0;flex:1}.options-row>select{max-width:none;width:100%}.actionline{flex-wrap:wrap}.start{width:100%;min-width:0}.safe-note{display:none}.footer{flex-wrap:wrap;gap:7px;font-size:11px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.choice,.progress-track div{transition:none}}
+
+/* One quiet utility area below quality/language: no new sidebar clutter. */
+.update-panel{border-top:1px solid #eee8fb;padding-top:17px;margin-top:17px}
+.update-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.update-buttons{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.update-buttons .folder,.update-buttons .subtle-btn{font-size:12px;padding:11px 13px}
+#update-message{color:#70639b;font-size:12px;margin:9px 0;overflow-wrap:anywhere;line-height:1.5}
+.bookmark-help{margin-top:8px;color:#6d5d9e;font-size:12px}
+.bookmark-help summary{cursor:pointer;font-weight:700}
+.bookmark-help small{display:block;line-height:1.6;margin-top:7px;max-width:650px;color:#8279a2}
+@media(max-width:600px){.update-buttons{width:100%}.update-buttons button{flex:1}}
