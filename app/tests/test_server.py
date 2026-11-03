@@ -221,9 +221,9 @@ def test_sidebar_has_only_three_utilities_and_home_keeps_four_choices(server):
     reader = SidebarReader()
     reader.feed(page)
     assert len(reader.buttons) == 3
-    assert [b.get('data-go-settings') is not None for b in reader.buttons] == [True, False, False]
-    assert [b.get('data-open-downloads') is not None for b in reader.buttons] == [False, True, False]
-    assert [b.get('data-repair') is not None for b in reader.buttons] == [False, False, True]
+    assert ['data-go-settings' in b for b in reader.buttons] == [True, False, False]
+    assert ['data-open-downloads' in b for b in reader.buttons] == [False, True, False]
+    assert ['data-repair' in b for b in reader.buttons] == [False, False, True]
     assert 'data-choose-mode' not in page
     assert 'data-go-home' not in page
     for mode in ('video', 'audio', 'subtitles', 'transcript'):
