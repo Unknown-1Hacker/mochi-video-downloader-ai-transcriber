@@ -73,11 +73,53 @@ def recover(root):
 
 
 def _run_launcher(root, live):
+    """Restart the local studio WITHOUT opening a duplicate browser window."""
+    import re
+    import urllib.request
     py = root / ".mochi" / "venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
     if not py.is_file():
         raise RuntimeError("Private Python environment is missing.")
-    subprocess.run([str(py), str(live / "launcher.py")], cwd=str(root),
-                   stdin=subprocess.DEVNULL, timeout=40, check=True)
+    match = re.search(r'^APP_VERSION\s*=\s*["\']([0-9.]+)["\']',
+                      (live / "version.py").read_text(encoding="utf-8"), re.M)
+    if not match:
+        raise RuntimeError("Application version is missing.")
+    expected = match.group(1)
+    options = {"cwd": str(root), "stdin": subprocess.DEVNULL}
+    if os.name == "nt":
+        options["creationflags"] = subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS
+    else:
+        options["start_new_session"] = True
+    with (root / ".mochi" / "studio.log").open("a", encoding="utf-8") as log:
+        proc = subprocess.Popen([str(py), str(live / "studio.py")],
+                                stdout=log, stderr=log, **options)
+    try:
+        for _ in range(150):
+            if proc.poll() is not None:
+                raise RuntimeError("New Mochi stopped unexpectedly.")
+            session = root / ".mochi" / "server.json"
+            try:
+                data = json.loads(session.read_text(encoding="utf-8"))
+                port = int(data["port"])
+                key = data["key"]
+                req = urllib.request.Request(f"http://127.0.0.1:{port}/api/health",
+                                             headers={"X-Mochi-Key": key})
+                with urllib.request.urlopen(req, timeout=.4) as response:
+                    health = json.loads(response.read())
+                if health.get("ok") is True and health.get("version") == expected:
+                    return
+            except (OSError, ValueError, KeyError, TypeError):
+                pass
+            time.sleep(.15)
+        raise RuntimeError("Mochi did not pass its restart health check.")
+    except Exception:
+        if proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
+        raise
 
 
 def install(root, version):
@@ -104,7 +146,11 @@ def install(root, version):
         staged.rename(live)
         _run_launcher(root, live)
         _write_state(root, "updated", "Updated successfully to " + version + ".")
-        shutil.rmtree(backup)
+        try:
+            shutil.rmtree(backup)
+        except OSError:
+            # Cleanup never turns a healthy verified update into a failure.
+            pass
     except Exception:
         if moved:
             # Try to stop an incorrectly started replacement before rollback.
