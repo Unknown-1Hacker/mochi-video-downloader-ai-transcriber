@@ -61,6 +61,13 @@ STATE="$ROOT/.mochi"
 PY="$STATE/venv/bin/python"
 APP="$STATE/app"
 LOG="$STATE/launch.log"
+# Interrupted in-app update? Restore the last working app before launching.
+if [ -d "$STATE/app.previous" ] && [ -f "$STATE/updates/update_worker.py" ] && [ -x "$PY" ]; then
+  "$PY" "$STATE/updates/update_worker.py" "$ROOT" --recover >> "$LOG" 2>&1 || {
+    printf 'Mochi is finishing an update; reopen Run Mochi Now shortly.\n' >> "$LOG"
+    exit 1
+  }
+fi
 if [ ! -d "$APP" ]; then
   printf 'Mochi app files are missing. Extract a fresh Mochi.zip and run setup again.\n' >> "$LOG"
   exit 1
@@ -92,6 +99,13 @@ $State = Join-Path $Root '.mochi'
 $Py = Join-Path $State 'venv\Scripts\python.exe'
 $App = Join-Path $State 'app'
 try {
+    # Recover an interrupted update before loading application modules.
+    if (Test-Path (Join-Path $State 'app.previous')) {
+        $Worker = Join-Path $State 'updates\update_worker.py'
+        if (-not (Test-Path $Py) -or -not (Test-Path $Worker)) { throw 'Update recovery needs its private Python helper.' }
+        & $Py $Worker $Root --recover
+        if ($LASTEXITCODE -ne 0) { throw 'Mochi is finishing an update. Reopen Run Mochi Now shortly.' }
+    }
     $NeedSetup = -not (Test-Path $Py)
     if (-not $NeedSetup) {
         & $Py -c 'import importlib.util as u; assert u.find_spec("yt_dlp")'
