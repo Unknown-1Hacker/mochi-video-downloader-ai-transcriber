@@ -365,3 +365,31 @@ def test_finished_transcript_controls_are_optional_and_local(server):
     assert 'navigator.clipboard.writeText(text)' in js
     assert "st.files.includes('Transcript.txt')" in js
     assert 'https://chatgpt.com' not in js and 'https://claude.ai' not in js
+
+
+def test_transcript_copy_normalizes_line_endings_without_editing_disk(server, monkeypatch):
+    from types import SimpleNamespace
+    base, token, root = server
+    folder = root / 'My Downloads' / 'finished'
+    folder.mkdir(parents=True)
+    original = b'One\r\nTwo\rThree\n'
+    file = folder / 'Transcript.txt'
+    file.write_bytes(original)
+    monkeypatch.setattr(studio, 'JOB', SimpleNamespace(
+        read=lambda: {'state': 'done', 'folder': str(folder), 'files': ['Transcript.txt']}
+    ))
+    with request(base, '/api/transcript', token) as resp:
+        assert json.loads(resp.read()) == {'text': 'One\nTwo\nThree\n'}
+    assert file.read_bytes() == original
+
+
+def test_transcript_browser_script_parses_when_node_is_available():
+    import shutil
+    import subprocess
+    node = shutil.which('node')
+    if not node:
+        pytest.skip('Node.js not available; static Python/UI checks still run')
+    js = Path(studio.__file__).parent / 'assets' / 'app.js'
+    result = subprocess.run([node, '--check', str(js)], capture_output=True,
+                            text=True, timeout=15, check=False)
+    assert result.returncode == 0, result.stderr
