@@ -59,7 +59,7 @@ def test_documentation_does_not_promise_unreleased_updater_or_bookmark_support()
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "issues/11" in readme
     assert "Still planned, not available yet" in readme
-    assert "A bookmarked local browser link can stop working" in readme
+    assert "Old browser bookmarks may stop working" in readme
     assert "Run Mochi Now" in readme
 
 
