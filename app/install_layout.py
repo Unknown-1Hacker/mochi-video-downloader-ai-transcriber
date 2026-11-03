@@ -21,17 +21,15 @@ README_NAME = '📖 READ ME.txt'
 README = """✦ MOCHI VIDEO STUDIO ✦
 ======================
 
-▶ Double-click  Run Mochi Now
-🐧 Linux shortcut blocked? Right-click → Allow Launching; fallback: sh .mochi/run.sh
-🔗 Paste a YouTube link
-🎬 Pick video / audio / subtitles / text
+▶ Open Run Mochi Now
+🔗 Paste a YouTube link → pick video, audio, subtitles or text
 ✨ Press Make it happen
-📂 Saved files: tap Open my saved files after completion.
-💾 In hidden .mochi/: keep Downloads; cache is safe to clear when closed. AI is optional.
+📂 Open saved files · 📋 Copy transcripts for any AI
+🔄 Check for updates · 🛠 Fix my tools if stuck
+🔖 Bookmarks need running Mochi; start it after reboot
+🐧 Linux: Right-click → Allow Launching; or sh .mochi/run.sh
+💾 Keep .mochi — your tools and downloads live there
 
-🛠 Stuck? Tap Fix my tools (top right).
-🔄 New version? In Mochi, use Check for updates, then Update now.
-🔖 Bookmarks work while Mochi runs; after reboot open Run Mochi Now first.
 💜 Made with love by 1Hack — OneHack.st
 """
 
