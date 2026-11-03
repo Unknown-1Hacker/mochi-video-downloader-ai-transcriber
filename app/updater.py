@@ -207,7 +207,7 @@ class UpdateManager:
     def read(self, root=None):
         with self.lock:
             current = dict(self.state)
-        if current["phase"] in ("downloading", "staging") or root is None:
+        if current["phase"] not in ("idle", "restarting") or root is None:
             return current
         # The detached worker can report an interrupted/rolled-back result
         # after a server restart without relying on stale in-memory state.
